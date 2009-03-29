@@ -128,6 +128,25 @@ AC_ARG_ENABLE(selinux,
 AC_SUBST(SELINUX_LIBS)
 AC_SUBST(SELINUX_CFLAGS)
 
+AC_MSG_CHECKING(for ConsoleKit support)
+AC_ARG_ENABLE(consolekit,
+	AC_HELP_STRING([--enable-consolekit], [enable ConsoleKit support]),
+    [
+	AC_MSG_RESULT(yes)
+		AC_CHECK_LIB(dbus-1, dbus_message_new_method_call, [DBUS_LIBS="-ldbus-1"
+			AC_DEFINE(WITH_CONSOLE_KIT, 1, [Define if you want wdm to be compiled with ConsoleKit support])
+           	DBUS_CFLAGS="$(pkg-config --cflags dbus-1)"
+               ],
+               [
+			AC_MSG_WARN([libdbus-1 not found, compiling without ConsoleKit support])
+            	])
+   ],
+   [
+   	AC_MSG_RESULT(no)
+   ])
+AC_SUBST(DBUS_CFLAGS)
+AC_SUBST(DBUS_LIBS)
+
             
 AC_CHECK_LIB(util, main) dnl for FreeBSD
 AC_CHECK_LIB(crypt, main) dnl for BSD and RHL

@@ -36,10 +36,10 @@ EXTRA_DIST = ABOUT-NLS \
 
 DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
 
-bin_wdm_CFLAGS = $(XCFLAGS) $(WCFLAGS) $(SELINUX_CFLAGS)
+bin_wdm_CFLAGS = $(XCFLAGS) $(WCFLAGS) $(SELINUX_CFLAGS) $(DBUS_CFLAGS)
 bin_wdm_LDFLAGS = $(XLDFLAGS) $(WLDFLAGS)
 bin_wdm_LDADD = bin/libwdm.a \
-		$(XLIBS) $(WLIBS) $(PASSWDLIB) $(SELINUX_LIBS) \
+		$(XLIBS) $(WLIBS) $(PASSWDLIB) $(SELINUX_LIBS) $(DBUS_LIBS) \
 		-lXmu -lXau -lXdmcp
 bin_wdm_SOURCES = src/wdm/access.c \
 		  src/wdm/auth.c \

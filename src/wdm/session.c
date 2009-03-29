@@ -152,7 +152,11 @@ static Bool StartClient(
     struct display	*d,
     int			*pidp,
     char		*name,
-    char		*passwd);
+    char		*passwd
+#ifdef WITH_CONSOLE_KIT
+    ,char		*ck_session_cookie
+#endif
+			);
 
 static int			clientPid;
 static struct greet_info	greet;
@@ -268,6 +272,9 @@ ManageSession (struct display *d)
 #ifndef GREET_USER_STATIC
     void		*greet_lib_handle;
 #endif
+#ifdef WITH_CONSOLE_KIT
+    char *ck_session_cookie = NULL;
+#endif
 
     WDMDebug("ManageSession %s\n", d->name);
     (void)XSetIOErrorHandler(IOErrorHandler);
@@ -312,7 +319,14 @@ ManageSession (struct display *d)
 	     * Start the clients, changing uid/groups
 	     *	   setting up environment and running the session
 	     */
-	    if (StartClient (&verify, d, &clientPid, greet.name, greet.password)) {
+#ifdef WITH_CONSOLE_KIT
+	    ck_session_cookie = open_ck_session (getpwnam(greet.name), d);
+#endif
+	    if (StartClient (&verify, d, &clientPid, greet.name, greet.password
+#ifdef WITH_CONSOLE_KIT
+			     ,ck_session_cookie
+#endif
+			     )) {
 		WDMDebug("Client Started\n");
 
 #ifndef GREET_USER_STATIC
@@ -358,6 +372,14 @@ ManageSession (struct display *d)
 	    AbortClient (clientPid);
 	}
     }
+
+#ifdef WITH_CONSOLE_KIT
+    if (ck_session_cookie != NULL) {
+	close_ck_session (ck_session_cookie);
+	free (ck_session_cookie);
+    }
+#endif
+
     /*
      * run system-wide reset file
      */
@@ -525,7 +547,11 @@ StartClient (
     struct display	*d,
     int			*pidp,
     char		*name,
-    char		*passwd)
+    char		*passwd
+#ifdef WITH_CONSOLE_KIT
+    ,char		*ck_session_cookie
+#endif
+    )
 {
     char	**f;
     const char	*home;
@@ -730,6 +756,11 @@ StartClient (
 	}
 #endif /* K5AUTH */
 	bzero(passwd, strlen(passwd));
+#ifdef WITH_CONSOLE_KIT
+	if (ck_session_cookie != NULL) {
+	    verify->userEnviron = WDMSetEnv ( verify->userEnviron, "XDG_SESSION_COOKIE", ck_session_cookie );
+	}
+#endif
 	SetUserAuthorization (d, verify);
 	home = WDMGetEnv(verify->userEnviron, "HOME");
 	if (home)
