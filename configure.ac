@@ -147,6 +147,27 @@ AC_ARG_ENABLE(consolekit,
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
+AC_ARG_WITH(libaudit,
+  [  --with-libaudit=[auto/yes/no]  Add Linux audit support [default=auto]],,
+  with_libaudit=auto)
+
+# Check for Linux auditing API
+#
+# libaudit detection
+if test x$with_libaudit = xno ; then
+    have_libaudit=no;
+else
+    # See if we have audit daemon library
+    AC_CHECK_LIB(audit, audit_log_user_message,
+                 have_libaudit=yes, have_libaudit=no)
+fi
+
+if test x$have_libaudit = xyes ; then
+    AUDIT_LIBS="-laudit"
+    AC_DEFINE(HAVE_LIBAUDIT,1,[linux audit support])
+fi
+AC_SUBST(AUDIT_LIBS)
+
             
 AC_CHECK_LIB(util, main) dnl for FreeBSD
 AC_CHECK_LIB(crypt, main) dnl for BSD and RHL

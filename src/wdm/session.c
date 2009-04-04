@@ -79,6 +79,13 @@ static	int	runAndWait (char **args, char **environ);
 #include <selinux/selinux.h>
 #endif
 
+#ifdef HAVE_LIBAUDIT
+#include <libaudit.h>
+#include <pwd.h>
+#else
+#define log_to_audit_system(l,h)   do { ; } while (0)
+#endif
+
 
 #if defined(CSRG_BASED)
 #include <pwd.h>
@@ -107,6 +114,31 @@ pam_handle_t *thepamh()
 	else
 		return NULL;
 }
+
+#ifdef HAVE_LIBAUDIT
+static void 
+log_to_audit_system(const pam_handle_t *pamhp, int success)
+{
+    struct passwd *pw;
+    char buf[64], *hostname = NULL, *tty = NULL, *login=NULL;
+    int audit_fd;
+
+    audit_fd = audit_open();
+    pam_get_item(pamhp, PAM_RHOST, &hostname);
+    pam_get_item(pamhp, PAM_TTY, &tty);
+    pam_get_item(pamhp, PAM_USER, &login);
+    if (login)
+	pw = getpwnam(login);
+    else {
+	login = "unknown";
+	pw = NULL;
+    }
+    audit_log_acct_message(audit_fd, AUDIT_USER_LOGIN, NULL,
+			   "wdm", login, pw ? pw->pw_uid : -1,
+			   hostname, NULL, tty, success);
+    close(audit_fd);
+}
+#endif
 #endif
 
 static	struct dlfuncs	dlfuncs = {
@@ -611,9 +643,10 @@ StartClient (
 #ifdef USE_PAM
 	if(pamh)
 	{
-		if(pam_setcred(thepamh(), PAM_ESTABLISH_CRED) != PAM_SUCCESS)
+		if(pam_setcred(pamh, PAM_ESTABLISH_CRED) != PAM_SUCCESS)
 		{
 			WDMError("pam_setcred failed, errno=%d\n", errno);
+			log_to_audit_system(pamh, 0);
 			pam_end(pamh, PAM_SUCCESS);
 			pamh = NULL;
 			return 0;
@@ -631,6 +664,10 @@ StartClient (
 #endif
 	if (setuid(verify->uid) < 0)
 	{
+#ifdef USE_PAM
+	    if(pamh)
+		log_to_audit_system(pamh, 0);
+#endif
 	    WDMError("setuid %d (user \"%s\") failed, errno=%d\n",
 		     verify->uid, name, errno);
 	    return (0);
@@ -760,6 +797,10 @@ StartClient (
 	if (ck_session_cookie != NULL) {
 	    verify->userEnviron = WDMSetEnv ( verify->userEnviron, "XDG_SESSION_COOKIE", ck_session_cookie );
 	}
+#endif
+#ifdef USE_PAM
+	if(pamh)
+	    log_to_audit_system(pamh, 1);
 #endif
 	SetUserAuthorization (d, verify);
 	home = WDMGetEnv(verify->userEnviron, "HOME");
