@@ -82,8 +82,6 @@ static	int	runAndWait (char **args, char **environ);
 #ifdef HAVE_LIBAUDIT
 #include <libaudit.h>
 #include <pwd.h>
-#else
-#define log_to_audit_system(l,h)   do { ; } while (0)
 #endif
 
 
@@ -116,23 +114,31 @@ pam_handle_t *thepamh()
 }
 
 #ifdef HAVE_LIBAUDIT
-static void 
-log_to_audit_system(const pam_handle_t *pamhp, int success)
+void log_to_audit_system(int success)
 {
     struct passwd *pw;
     char buf[64], *hostname = NULL, *tty = NULL, *login=NULL;
     int audit_fd;
+    pam_handle_t *pamh = thepamh();
 
+    if (!pamh) {
+	WDMDebug("pamh == NULL\n");
+	return;
+    }
     audit_fd = audit_open();
-    pam_get_item(pamhp, PAM_RHOST, &hostname);
-    pam_get_item(pamhp, PAM_TTY, &tty);
-    pam_get_item(pamhp, PAM_USER, &login);
+    pam_get_item(pamh, PAM_RHOST, &hostname);
+    pam_get_item(pamh, PAM_TTY, &tty);
+    pam_get_item(pamh, PAM_USER, &login);
     if (login)
 	pw = getpwnam(login);
     else {
 	login = "unknown";
 	pw = NULL;
     }
+    WDMDebug("audit_log_acct_message(%d, %d, %s, %s, %s, %d, %s, %s, %s, %d);\n",
+	     audit_fd, AUDIT_USER_LOGIN, NULL,
+	     "wdm", login, pw ? pw->pw_uid : -1,
+	     hostname, NULL, tty, success);
     audit_log_acct_message(audit_fd, AUDIT_USER_LOGIN, NULL,
 			   "wdm", login, pw ? pw->pw_uid : -1,
 			   hostname, NULL, tty, success);
@@ -646,7 +652,7 @@ StartClient (
 		if(pam_setcred(pamh, PAM_ESTABLISH_CRED) != PAM_SUCCESS)
 		{
 			WDMError("pam_setcred failed, errno=%d\n", errno);
-			log_to_audit_system(pamh, 0);
+			log_to_audit_system(0);
 			pam_end(pamh, PAM_SUCCESS);
 			pamh = NULL;
 			return 0;
@@ -660,14 +666,11 @@ StartClient (
 		}}
 
 		pam_open_session(pamh, 0);
+		log_to_audit_system(1);
 	}
 #endif
 	if (setuid(verify->uid) < 0)
 	{
-#ifdef USE_PAM
-	    if(pamh)
-		log_to_audit_system(pamh, 0);
-#endif
 	    WDMError("setuid %d (user \"%s\") failed, errno=%d\n",
 		     verify->uid, name, errno);
 	    return (0);
@@ -687,7 +690,7 @@ StartClient (
 	/*
 	 * for Security Enhanced Linux,
 	 * set the default security context for this user.
-    */
+	 */
 #ifdef WITH_SELINUX
 	if (is_selinux_enabled())
 	{
@@ -797,10 +800,6 @@ StartClient (
 	if (ck_session_cookie != NULL) {
 	    verify->userEnviron = WDMSetEnv ( verify->userEnviron, "XDG_SESSION_COOKIE", ck_session_cookie );
 	}
-#endif
-#ifdef USE_PAM
-	if(pamh)
-	    log_to_audit_system(pamh, 1);
 #endif
 	SetUserAuthorization (d, verify);
 	home = WDMGetEnv(verify->userEnviron, "HOME");

@@ -433,6 +433,11 @@ extern void ReinitResources (void);
 #ifdef USE_PAM
 extern pam_handle_t **thepamhp(void);
 extern pam_handle_t *thepamh(void);
+#ifdef HAVE_LIBAUDIT
+void log_to_audit_system(int);
+#else
+#define log_to_audit_system(l)   do { ; } while (0)
+#endif
 #endif
 extern char **defaultEnv (void);
 extern char **systemEnv (struct display *d, char *user, char *home);

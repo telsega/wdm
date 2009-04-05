@@ -457,8 +457,6 @@ done:
 	pam_error = pam_acct_mgmt(*pamhp, 0);
 	/* really should do password changing, but it doesn't fit well */
 	PAM_BAIL;
-	pam_error = pam_setcred(*pamhp, 0);
-	PAM_BAIL;
 	p = getpwnam (greet->name);
 	endpwent();
 
@@ -470,6 +468,7 @@ done:
 
 	if (pam_error != PAM_SUCCESS) {
 	pam_failed:
+		log_to_audit_system(0);
 		pam_end(*pamhp, PAM_SUCCESS);
 		*pamhp = NULL;
 		return 0;
