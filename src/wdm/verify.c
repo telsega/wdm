@@ -450,7 +450,22 @@ done:
 	PAM_BAIL;
 	pam_error = pam_set_item(*pamhp, PAM_TTY, d->name);
 	PAM_BAIL;
-	pam_error = pam_set_item(*pamhp, PAM_RHOST, "");
+	if (d->name[0] != ':') {        /* Displaying to remote host */
+		char *hostname = strdup(d->name);
+
+		if (hostname == NULL) {
+			WDMError("Out of memory!\n");
+		} else {
+			char *colon = strrchr(hostname, ':');
+
+			if (colon != NULL)
+				*colon = '\0';
+
+			pam_error = pam_set_item(*pamhp, PAM_RHOST, hostname);
+			free(hostname);
+		}
+	} else
+		pam_error = pam_set_item(*pamhp, PAM_RHOST, "localhost");
 	PAM_BAIL;
 	pam_error = pam_authenticate(*pamhp, 0);
 	PAM_BAIL;
