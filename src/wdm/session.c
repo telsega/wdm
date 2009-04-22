@@ -615,14 +615,6 @@ StartClient (
     }
 #ifdef USE_PAM
 #endif    
-    switch (pid = fork ()) {
-    case 0:
-	CleanUpChild ();
-#ifdef XDMCP
-	/* The chooser socket is not closed by CleanUpChild() */
-	DestroyWellKnownSockets();
-#endif
-
 	/* Do system-dependent login setup here */
 
 #ifndef AIXV3
@@ -669,6 +661,16 @@ StartClient (
 		log_to_audit_system(1);
 	}
 #endif
+#endif /* AIXV3 */
+    switch (pid = fork ()) {
+    case 0:
+	CleanUpChild ();
+#ifdef XDMCP
+	/* The chooser socket is not closed by CleanUpChild() */
+	DestroyWellKnownSockets();
+#endif
+
+#ifndef AIXV3
 	if (setuid(verify->uid) < 0)
 	{
 	    WDMError("setuid %d (user \"%s\") failed, errno=%d\n",
