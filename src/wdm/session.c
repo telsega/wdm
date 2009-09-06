@@ -650,15 +650,15 @@ StartClient (
 			return 0;
 		}
 
+		pam_open_session(pamh, 0);
+		log_to_audit_system(1);
+
 		/* pass in environment variables set by libpam and modules it called */
 		{long i;
 		char **pam_env = pam_getenvlist(pamh);
 		for(i = 0; pam_env && pam_env[i]; i++) {
 			verify->userEnviron = WDMPutEnv(verify->userEnviron, pam_env[i]);
 		}}
-
-		pam_open_session(pamh, 0);
-		log_to_audit_system(1);
 	}
 #endif
 #endif /* AIXV3 */
