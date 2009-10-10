@@ -472,6 +472,10 @@ If you have recent version of XFree with support for transparent
 cursors you can select cursor theme to use on login panel.
 XCURSOR_THEME environment variable will be set to value of this
 resource before starting wdmLogin.
+.IP "\fBDisplayManager.wdmSequentialXServerLaunch\fP"
+If true, launch multiple X servers sequentially to avoid system
+hangup. (Slower. but safer. See http://www.altlinux.org/X11/DualSeat.)
+Otherwise launch multiple X servers in parallel (default).
 .SH "CONFIGURATION FILE"
 The default location of the 
 .I wdm

@@ -94,6 +94,10 @@ char	*wdmCursorTheme;	/* this will be XCURSOR_THEME value before */
 int_resource	wdmXineramaHead;/* select xinerama head where to show login */
 				/* panel this _should_ be display dependant, */
 				/* but I make it later */
+int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
+				/* sequentially, (slower. but safer. see */
+				/* http://www.altlinux.org/X11/DualSeat) */
+				/* otherwise in parallel (default) */
 
 # define DM_STRING	0
 # define DM_INT		1
@@ -392,6 +396,8 @@ struct dmResources wdmResources[] = {
 				""} ,
 { "wdmXineramaHead",	"WdmXineramaHead",	DM_INT,	&wdmXineramaHead.c,
 				"0"} ,
+{ "wdmSequentialXServerLaunch",	"WdmSequentialXServerLaunch",	DM_BOOL, &wdmSequentialXServerLaunch.c,
+				"false"} ,
 };
 
 # define NUM_WDM_RESOURCES	(sizeof wdmResources/\

@@ -71,4 +71,6 @@ DisplayManager*wdmVerify:       true
 DisplayManager*wdmRoot:         false
 ! true=enable, false=disable shake and rollup animations
 DisplayManager*wdmAnimations:   true
+! true=enable, false=disable(default) launching X servers sequentially
+! DisplayManager*wdmSequentialXServerLaunch:   false
 

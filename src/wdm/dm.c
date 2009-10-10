@@ -104,6 +104,8 @@ static int StorePid (void);
 
 static int parent_pid = -1; 	/* PID of parent xdm process */
 
+extern int wdmSequentialXServerLaunch;
+
 int
 main (int argc, char **argv)
 {
@@ -685,6 +687,8 @@ StartDisplay (struct display *d)
 	WDMDebug("pid: %d\n", pid);
 	d->pid = pid;
 	d->status = running;
+	/* checking a predeclared X resource DisplayManager*wdmSequentialXServerLaunch here */
+	if (wdmSequentialXServerLaunch) WaitForServer (d);
 	break;
     }
 }
