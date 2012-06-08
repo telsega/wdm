@@ -49,6 +49,8 @@
 #include <locale.h>
 #include <time.h>
 
+#include "gettext.h"
+
 /*###################################################################*/
 
 /** Global Variables and Constants **/
@@ -1273,14 +1275,8 @@ main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 
 #ifdef I18N
-	if(getenv("NLSPATH"))
-		bindtextdomain("wdm", getenv("NLSPATH"));
-	else
-		bindtextdomain("wdm", NLSDIR);
-#if WINGS_H_VERSION >= 20040406
-	bind_textdomain_codeset("wdm", "UTF-8");
-#endif
-	textdomain("wdm");
+	bindtextdomain(PACKAGE, LOCALEDIR);
+	textdomain(PACKAGE);
 #endif
 
 	animate = False;

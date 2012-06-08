@@ -1,11 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT([wdm],[0.0],[voins@voins.program.ru])
-AC_CONFIG_SRCDIR(install-sh)
-AC_CONFIG_HEADERS(include/config.h)
+AC_INIT([wdm],[1.99],[raorn@raorn.name])
+AM_INIT_AUTOMAKE
+AC_CONFIG_SRCDIR([src/wdm/dm.c])
+AC_CONFIG_HEADERS([include/config.h])
 
 AC_PROG_INSTALL
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_RANLIB
 
 AC_ARG_VAR(XRDB_PATH, [Path to xrdb program from X])
@@ -386,52 +388,17 @@ fi
 AC_SUBST(WMLIST)
 
 
-dnl 
-dnl gettext tests (partially copy/paste from WindowMaker's configure.ac)
-dnl
-INTLIBS=""
-AC_CHECK_FUNC(gettext, [HAVEGETTEXT="yes"],
-	AC_CHECK_LIB(intl, gettext, [INTLIBS="-lintl" HAVEGETTEXT="yes"],
-		INTLIBS=""))
-
-AC_CHECK_PROG(XGETTEXT, xgettext, xgettext)
-AC_CHECK_PROG(MSGFMT, msgfmt, msgfmt)
-
-if test "x$XGETTEXT" != "x"; then
-	if $XGETTEXT --help 2>&1 | grep illegal &> /dev/null; then
-		echo "xgettext isn't GNU version"
-		XGETTEXT=""
-	fi
-fi
-
-I18N=no
-if test "x$MSGFMT" != "x" -a "x$HAVEGETTEXT" != "x"; then
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION(0.18.1)
+if test "x$USE_NLS" != "x"; then
 	AC_DEFINE(I18N, 1, [Define if you want internationalization support])
-	I18N=yes
 fi
-AC_SUBST(I18N)
-
-AC_ARG_WITH(nlsdir,
-	AC_HELP_STRING([--with-nlsdir=PATH],[specify where locale stuff should go]))
-
-if test "x$NLSDIR" = "x"; then
-	if test "x$with_nlsdir" != "x"; then
-		NLSDIR=$with_nlsdir
-	else
-		NLSDIR=$prefix/lib/locale
-	fi
-fi
-
-AC_DEFINE_UNQUOTED(NLSDIR, "$NLSDIR", [where to look for locale files])
-AC_SUBST(NLSDIR)
-AC_SUBST(XGETTEXT)
-AC_SUBST(MSGFMT)
 
 dnl this is hackaround for libfontconfig bug
 AC_ARG_WITH(fakehome,
-	AC_HELP_STRING([--with-fakehome=PATH],[path to use as home when no HOME is present. [/var/run/wdm] ]))
+	AC_HELP_STRING([--with-fakehome=PATH],[path to use as home when no HOME is present. [RUNDIR/wdm] ]))
 
-FAKEHOME=/var/run/wdm
+FAKEHOME="$RUNDIR/wdm"
 if test "x$with_fakehome" != "x"; then
 	FAKEHOME=$with_fakehome
 fi
@@ -450,6 +417,17 @@ if test "$enable_exitlogin" = "yes"; then
 	AC_DEFINE(WITH_EXITLOGIN, 1, [Define if you want to have ExitLogin])
 fi
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+				 configs/GiveConsole
+				 configs/TakeConsole
+				 configs/wdm-config
+				 configs/Xreset
+				 configs/Xservers
+				 configs/Xsession
+				 configs/Xsetup_0
+				 configs/Xstartup
+				 doc/wdm.man
+				 po/Makefile.in
+				 wdm.spec])
 AC_OUTPUT
 
