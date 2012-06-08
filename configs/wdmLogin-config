@@ -1,0 +1,5 @@
+{
+	geometry = (530, 240);
+	aa = YES;
+	multibyte = YES;
+}

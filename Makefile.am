@@ -9,6 +9,7 @@ noinst_LIBRARIES = bin/libwdm.a
 
 dmdir = @DMDIR@
 dm_DATA = configs/wdm-config \
+	  configs/wdmLogin-config
 	  configs/Xaccess \
 	  configs/Xresources \
 	  configs/Xservers
