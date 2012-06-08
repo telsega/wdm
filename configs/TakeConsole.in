@@ -5,3 +5,5 @@
 #
 chmod 622 /dev/console
 chown root /dev/console
+/usr/bin/sessreg -d -w "/var/log/wtmp" -u "/var/run/utmp" \
+	-x "@DMDIR@/Xservers" -l "$DISPLAY" -h "${DISPLAY%:*}" "$USER"

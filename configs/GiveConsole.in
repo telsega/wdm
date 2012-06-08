@@ -7,4 +7,6 @@
 # the console output.  This way a random user can invoke xterm -C without
 # causing serious grief.
 #
-chown $USER /dev/console
+chown "$USER" /dev/console
+/usr/bin/sessreg  -a -w "/var/log/wtmp" -u "/var/run/utmp" \
+	-x "@DMDIR@/Xservers" -l "$DISPLAY" -h "${DISPLAY%:*}" "$USER"
