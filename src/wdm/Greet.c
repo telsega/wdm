@@ -326,7 +326,7 @@ static int Greet (struct display *d, struct greet_info *greet)
 /**** This is the entry point from session.c ****/
 
 greet_user_rtn GreetUser(struct display *d, Display **dpy, struct verify_info
-                                *verify, struct greet_info *greet, struct dlfuncs *dlfuncs)
+                                *verify, struct greet_info *greet)
 {
     int flag;
     int pid;

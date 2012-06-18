@@ -59,13 +59,6 @@ from The Open Group.
 # include <krb5/krb5.h>
 #endif
 
-#ifndef GREET_USER_STATIC
-#include <dlfcn.h>
-#ifndef RTLD_NOW
-#define RTLD_NOW 1
-#endif
-#endif
-
 #include <wdmlib.h>
 
 static	int	runAndWait (char **args, char **environ);
@@ -146,44 +139,6 @@ void log_to_audit_system(int success)
 }
 #endif
 #endif
-
-static	struct dlfuncs	dlfuncs = {
-	PingServer,
-	SessionPingFailed,
-	WDMDebug,
-	RegisterCloseOnFork,
-	SecureDisplay,
-	UnsecureDisplay,
-	ClearCloseOnFork,
-	SetupDisplay,
-	WDMError,
-	SessionExit,
-	DeleteXloginResources,
-	source,
-	defaultEnv,
-	WDMSetEnv,
-	WDMPutEnv,
-	parseArgs,
-	WDMPrintEnv,
-	systemEnv,
-	setgrent,
-	getgrent,
-	endgrent,
-#ifdef HAVE_SHADOW_H
-	getspnam,
-#ifndef QNX4
-	endspent,
-#endif /* QNX4 doesn't use endspent */
-#endif
-	getpwnam,
-#ifdef linux
-	endpwent,
-#endif
-	crypt,
-#ifdef USE_PAM
-	thepamhp,
-#endif
-	};
 
 static Bool StartClient(
     struct verify_info	*verify,
@@ -306,10 +261,6 @@ ManageSession (struct display *d)
     static int		pid = 0;
     Display		*dpy;
     greet_user_rtn	greet_stat; 
-    static GreetUserProc greet_user_proc = NULL;
-#ifndef GREET_USER_STATIC
-    void		*greet_lib_handle;
-#endif
 #ifdef WITH_CONSOLE_KIT
     char *ck_session_cookie = NULL;
 #endif
@@ -327,26 +278,9 @@ ManageSession (struct display *d)
      */
     LoadXloginResources (d);
 
-#ifdef GREET_USER_STATIC
-    greet_user_proc = GreetUser;
-#else
-    WDMDebug("ManageSession: loading greeter library %s\n", greeterLib);
-    greet_lib_handle = dlopen(greeterLib, RTLD_NOW);
-    if (greet_lib_handle != NULL)
-	greet_user_proc = (GreetUserProc)dlsym(greet_lib_handle, "GreetUser");
-    if (greet_user_proc == NULL)
-	{
-	WDMError("%s while loading %s\n", dlerror(), greeterLib);
-	exit(UNMANAGE_DISPLAY);
-	}
-#endif
-
-    /* tell the possibly dynamically loaded greeter function
-     * what data structure formats to expect.
-     * These version numbers are registered with The Open Group. */
     verify.version = 1;
     greet.version = 1;
-    greet_stat = (*greet_user_proc)(d, &dpy, &verify, &greet, &dlfuncs);
+    greet_stat = GreetUser(d, &dpy, &verify, &greet);
 
     if (greet_stat == Greet_Success)
     {
@@ -367,11 +301,6 @@ ManageSession (struct display *d)
 			     )) {
 		WDMDebug("Client Started\n");
 
-#ifndef GREET_USER_STATIC
-                /* Save memory; close library */
-                dlclose(greet_lib_handle);
-#endif
- 
 		/*
 		 * Wait for session to end,
 		 */
@@ -996,10 +925,3 @@ systemEnv (struct display *d, char *user, char *home)
 	    env = WDMSetEnv(env, "XAUTHORITY", d->authFile);
     return env;
 }
-
-#if (defined(Lynx) && !defined(HAS_CRYPT)) || defined(SCO) && !defined(SCO_USA) && !defined(_SCO_DS)
-char *crypt(char *s1, char *s2)
-{
-	return(s2);
-}
-#endif
