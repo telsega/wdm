@@ -416,7 +416,7 @@ char *open_ck_session(struct passwd *pwent, struct display *d)
 				sprintf(buffer, "/dev/tty%d", minor(tty));
 				add_param_string(&iter_struct, "x11-display-device", buffer);
 			}
-			close(fp);
+			fclose(fp);
 		}
 	}
 
