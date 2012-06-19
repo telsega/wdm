@@ -1,4 +1,3 @@
-/* $Xorg: policy.c,v 1.4 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 
 Copyright 1988, 1998  The Open Group
@@ -26,14 +25,12 @@ other dealings in this Software without prior written authorization
 from The Open Group.
 
 */
-
 /*
  * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * policy.c.  Implement site-dependent policy for XDMCP connections
  */
-/* $XFree86: xc/programs/xdm/policy.c,v 3.7 2001/12/27 20:01:56 dawes Exp $ */
 
 # include <dm.h>
 # include <dm_auth.h>

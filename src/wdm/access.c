@@ -1,6 +1,4 @@
 /*
- * $Xorg: access.c,v 1.5 2001/02/09 02:05:40 xorgcvs Exp $
- *
 Copyright 1990, 1998  The Open Group
 
 Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,9 +23,6 @@ in this Software without prior written authorization from The Open Group.
  *
  * Author:  Keith Packard, MIT X Consortium
  */
-
-/* $XFree86: xc/programs/xdm/access.c,v 3.8 2001/12/14 20:01:19 dawes Exp $ */
-
 /*
  * Access control for XDMCP - keep a database of allowable display addresses
  * and (potentially) a list of hosts to send ForwardQuery packets to

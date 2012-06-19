@@ -1,8 +1,6 @@
 /**
  * Copyright (C) 2002, 2003 Alexey Voinov <voins@voins.program.ru>
  *
- * @file
- * Вспомогательные макросы для создания тестов
  */
 #ifndef __RUNTEST_H
 #define __RUNTEST_H

@@ -1,7 +1,3 @@
-/*
- * $XFree86: xc/programs/xdm/dm_socket.h,v 1.2 2001/07/23 13:15:52 dawes Exp $
- */
-
 /************************************************************
 
 Copyright 1998 by Thomas E. Dickey <dickey@clark.net>

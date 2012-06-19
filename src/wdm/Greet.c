@@ -1,5 +1,3 @@
-/* $XConsortium: greet.c,v 1.41 94/09/12 21:32:49 converse Exp $ */
-/* $XFree86: xc/programs/xdm/greeter/greet.c,v 3.1 1995/10/21 12:52:36 dawes Exp $ */
 /*
 
 Copyright (c) 1988  X Consortium

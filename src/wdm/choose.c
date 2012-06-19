@@ -1,6 +1,4 @@
 /*
- * $Xorg: choose.c,v 1.5 2001/02/09 02:05:40 xorgcvs Exp $
- *
 Copyright 1990, 1998  The Open Group
 
 Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,9 +23,6 @@ in this Software without prior written authorization from The Open Group.
  *
  * Author:  Keith Packard, MIT X Consortium
  */
-
-/* $XFree86: xc/programs/xdm/choose.c,v 3.15 2001/12/14 20:01:20 dawes Exp $ */
-
 /*
  * choose.c
  *

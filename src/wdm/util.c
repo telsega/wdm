@@ -1,4 +1,3 @@
-/* $Xorg: util.c,v 1.4 2001/02/09 02:05:41 xorgcvs Exp $ */
 /*
 
 Copyright 1989, 1998  The Open Group
@@ -26,8 +25,6 @@ other dealings in this Software without prior written authorization
 from The Open Group.
 
 */
-/* $XFree86: xc/programs/xdm/util.c,v 3.19 2001/12/14 20:01:24 dawes Exp $ */
-
 /*
  * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
