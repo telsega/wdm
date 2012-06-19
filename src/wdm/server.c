@@ -53,7 +53,6 @@ static int serverPause (unsigned t, int serverPid);
 
 static Display	*dpy;
 
-/* ARGSUSED */
 static SIGVAL
 CatchUsr1 (int n)
 {
@@ -153,14 +152,12 @@ StartServer (struct display *d)
 static Jmp_buf	pauseAbort;
 static int	serverPauseRet;
 
-/* ARGSUSED */
 static SIGVAL
 serverPauseAbort (int n)
 {
     Longjmp (pauseAbort, 1);
 }
 
-/* ARGSUSED */
 static SIGVAL
 serverPauseUsr1 (int n)
 {
@@ -239,7 +236,6 @@ serverPause (unsigned t, int serverPid)
 
 static Jmp_buf	openAbort;
 
-/* ARGSUSED */
 static SIGVAL
 abortOpen (int n)
 {
@@ -339,7 +335,6 @@ PingLost (void)
     Longjmp (pingTime, 1);
 }
 
-/* ARGSUSED */
 static int
 PingLostIOErr (Display *dpy)
 {
@@ -347,7 +342,6 @@ PingLostIOErr (Display *dpy)
     return 0;
 }
 
-/* ARGSUSED */
 static SIGVAL
 PingLostSig (int n)
 {

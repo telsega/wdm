@@ -124,7 +124,6 @@ AnyWellKnownSockets (void)
 
 static XdmcpBuffer	buffer;
 
-/*ARGSUSED*/
 static void
 sendForward (
     CARD16	connectionType,
@@ -503,7 +502,6 @@ NetworkAddressToName(
     }
 }
 
-/*ARGSUSED*/
 static void
 forward_respond (
     struct sockaddr	*from,

@@ -157,7 +157,6 @@ static struct verify_info	verify;
 
 static Jmp_buf	abortSession;
 
-/* ARGSUSED */
 static SIGVAL
 catchTerm (int n)
 {
@@ -166,7 +165,6 @@ catchTerm (int n)
 
 static Jmp_buf	pingTime;
 
-/* ARGSUSED */
 static SIGVAL
 catchAlrm (int n)
 {
@@ -175,7 +173,6 @@ catchAlrm (int n)
 
 static Jmp_buf	tenaciousClient;
 
-/* ARGSUSED */
 static SIGVAL
 waitAbort (int n)
 {
@@ -236,7 +233,6 @@ SessionPingFailed (struct display *d)
  * server to terminate.  For other X errors, we should give up.
  */
 
-/*ARGSUSED*/
 static int
 IOErrorHandler (Display *dpy)
 {
@@ -385,7 +381,6 @@ SetupDisplay (struct display *d)
     }
 }
 
-/*ARGSUSED*/
 void
 DeleteXloginResources (struct display *d, Display *dpy)
 {
@@ -401,7 +396,6 @@ DeleteXloginResources (struct display *d, Display *dpy)
 
 static Jmp_buf syncJump;
 
-/* ARGSUSED */
 static SIGVAL
 syncTimeout (int n)
 {

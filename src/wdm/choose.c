@@ -349,7 +349,6 @@ RemoveIndirectChoice (clientAddress, connectionType)
 }
 #endif
 
-/*ARGSUSED*/
 static void
 AddChooserHost (
     CARD16	connectionType,

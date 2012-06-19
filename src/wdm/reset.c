@@ -44,7 +44,6 @@ from The Open Group.
 
 #include <wdmlib.h>
 
-/*ARGSUSED*/
 static int
 ignoreErrors (Display *dpy, XErrorEvent *event)
 {
@@ -78,7 +77,6 @@ killWindows (Display *dpy, Window window)
 
 static Jmp_buf	resetJmp;
 
-/* ARGSUSED */
 static SIGVAL
 abortReset (int n)
 {

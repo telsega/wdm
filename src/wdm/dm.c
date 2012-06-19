@@ -220,7 +220,6 @@ main (int argc, char **argv)
     /*NOTREACHED*/
 }
 
-/* ARGSUSED */
 static SIGVAL
 RescanNotify (int n)
 {
@@ -362,7 +361,6 @@ RescanIfMod (void)
  * catch a SIGTERM, kill all displays and exit
  */
 
-/* ARGSUSED */
 static SIGVAL
 StopAll (int n)
 {
@@ -404,7 +402,6 @@ StopAll (int n)
 int	ChildReady;
 
 #ifndef UNRELIABLE_SIGNALS
-/* ARGSUSED */
 static SIGVAL
 ChildNotify (int n)
 {

@@ -118,7 +118,6 @@ SelectAuthorizationTypeIndex (
     return -1;
 }
 
-/*ARGSUSED*/
 int
 Willing (
     ARRAY8Ptr	    addr,
@@ -163,7 +162,6 @@ Willing (
     return ret;
 }
 
-/*ARGSUSED*/
 ARRAY8Ptr
 Accept (
     struct sockaddr *from,
@@ -173,7 +171,6 @@ Accept (
     return 0;
 }
 
-/*ARGSUSED*/
 int
 SelectConnectionTypeIndex (
     ARRAY16Ptr	     connectionTypes,
