@@ -131,8 +131,8 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #ifndef DEF_FAILSAFE_CLIENT
 #define DEF_FAILSAFE_CLIENT "/usr/bin/X11/xterm"
 #endif
-#ifndef DEF_XDM_CONFIG
-#define DEF_XDM_CONFIG "/usr/lib/X11/xdm/xdm-config"
+#ifndef DEF_WDM_CONFIG
+#define DEF_WDM_CONFIG "/usr/lib/X11/xdm/xdm-config"
 #endif
 #ifndef DEF_CHOOSER
 #define DEF_CHOOSER "/usr/lib/X11/xdm/chooser"
@@ -189,8 +189,8 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #ifndef DEF_FAILSAFE_CLIENT
 #define DEF_FAILSAFE_CLIENT "/XFree86/bin/xterm"
 #endif
-#ifndef DEF_XDM_CONFIG
-#define DEF_XDM_CONFIG "/XFree86/lib/X11/xdm/xdm-config"
+#ifndef DEF_WDM_CONFIG
+#define DEF_WDM_CONFIG "/XFree86/lib/X11/xdm/xdm-config"
 #endif
 #ifndef DEF_CHOOSER
 #define DEF_CHOOSER "/XFree86/lib/X11/xdm/chooser"
@@ -539,7 +539,7 @@ ReinitResources (void)
 		     sizeof (configTable) / sizeof (configTable[0]),
 		     "DisplayManager", &argc, argv);
     GetResource ("DisplayManager.configFile", "DisplayManager.ConfigFile",
-		 DM_STRING, &config, DEF_XDM_CONFIG);
+		 DM_STRING, &config, DEF_WDM_CONFIG);
     newDB = XrmGetFileDatabase ( config );
     if (newDB)
     {

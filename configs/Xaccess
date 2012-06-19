@@ -1,5 +1,3 @@
-# $XConsortium: Xaccess,v 1.5 91/08/26 11:52:51 rws Exp $
-#
 # Access control file for XDMCP connections
 #
 # To control Direct and Broadcast access:

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
 AC_INIT([wdm],[1.99],[raorn@raorn.name])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip silent-rules subdir-objects])
 AC_CONFIG_SRCDIR([src/wdm/dm.c])
 AC_CONFIG_HEADERS([include/config.h])
 
@@ -9,327 +9,342 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_RANLIB
+AC_PROG_SED
+PKG_PROG_PKG_CONFIG
 
-AC_ARG_VAR(XRDB_PATH, [Path to xrdb program from X])
-AC_PATH_PROG(XRDB_PATH, xrdb)
-AC_DEFINE_UNQUOTED(XRDB_PROGRAM, "$XRDB_PATH", [Value is a path for xrdb program])
-AC_SUBST(XRDB_PATH)
-
-
-AC_ARG_VAR(XCONSOLE, [Path to xconsole program])
-AC_PATH_PROG(XCONSOLE, xconsole)
-AC_SUBST(XCONSOLE)
-
-
-AC_ARG_VAR(SHUTDOWN, [Path to shutdown program])
-AC_PATH_PROG(SHUTDOWN,shutdown,,$PATH:/sbin:/usr/sbin)
-AC_SUBST(SHUTDOWN)
-
-
-AC_ARG_VAR(FAILSAFE_PATH, [Path to program, that is used as failsafe client])
-AC_PATH_PROG(FAILSAFE_PATH, xterm)
-AC_DEFINE_UNQUOTED(DEF_FAILSAFE_CLIENT, "$FAILSAFE_PATH", [Value is a path for program used as failsafe client])
-AC_DEFINE_UNQUOTED(DEF_SESSION, "$FAILSAFE_PATH -ls", [Value is a command for default session])
-AC_SUBST(FAILSAFE_PATH)
-
-
-AC_ARG_VAR(DEF_SERVER, [Path to default X server])
-AC_PATH_PROG(DEF_SERVER, X)
-AC_DEFINE_UNQUOTED(DEF_SERVER_LINE, ":0 local $DEF_SERVER :0", [Value is default command to start X server])
-AC_SUBST(DEF_SERVER)
-
-
-AC_ARG_VAR(SYSTEM_SHELL, [Path to default shell])
-AC_PATH_PROG(SYSTEM_SHELL, sh)
-AC_PATH_PROG(SHELL_BASH,bash,,$PATH:/usr/local/bin)
-if test "x$SYSTEM_SHELL" = "x"; then
-	AC_MSG_ERROR(the program sh cannot be found)
-fi
-dnl hope this is correct:
-if test "x$SHELL_BASH" = "x"; then
-	SHELL_LOGIN="$SYSTEM_SHELL -"
-else
-	SHELL_LOGIN="$SHELL_BASH -login"
-fi
-AC_SUBST(SHELL_LOGIN)
-AC_SUBST(SYSTEM_SHELL)
-
-
+AC_DEFINE([_GNU_SOURCE], [1], [Enable GNU extensions if present])
+AC_DEFINE([_XOPEN_SOURCE], [600], [Enable POSIX extensions if present])
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/param.h syslog.h libintl.h)
-
-AC_DECL_SYS_SIGLIST
-
+AC_CHECK_HEADERS([fcntl.h sys/param.h syslog.h])
+AC_CHECK_DECLS([sys_siglist], [], [],
+			   [#include <signal.h>
+				/* NetBSD declares sys_siglist in unistd.h. */
+				#ifdef HAVE_UNISTD_H
+				# include <unistd.h>
+				#endif
+				])
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T
 
-dnl if there is mkstemp use it instead of mktemp
-AC_CHECK_FUNC(mkstemp, 
-	[AC_DEFINE(HAVE_MKSTEMP, 1,
-		[Define if you have mkstemp function to use it instead of mktemp.])])
 
-dnl Password processing options
-AC_ARG_ENABLE(pam,
-	AC_HELP_STRING([--disable-pam], [don't use PAM for authentication]))
+AC_CHECK_FUNC([mkstemp],
+			  [AC_DEFINE([HAVE_MKSTEMP], [1],
+						 [Define if you have mkstemp function to use it instead of mktemp.])])
 
-AC_ARG_ENABLE(shadow,
-	AC_HELP_STRING([--disable-shadow], [don't use shadow for authentication]))
 
-AC_ARG_WITH(pamdir,
-	AC_HELP_STRING([--with-pamdir],[specify where pam directory is]),
-	[PAMDIR="$withval"],
-	[PAMDIR="/etc/pam.d"])
-AC_SUBST(PAMDIR)
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION(0.18.1)
+AS_IF([test "x$USE_NLS" = "xyes"],
+	[AC_DEFINE(I18N, 1, [Define if you want internationalization support])])
 
-USE_PAM=no
-if test "$enable_pam" != "no" -a "$enable_shadow" != "yes" \
-	|| test "$enable_pam" = "yes" -a "$enable_shadow" = "yes"; then
 
-	AC_CHECK_LIB(pam, main,
-		[
-			USE_PAM=yes
-			PASSWDLIB="-lpam -ldl"
-			AC_DEFINE_UNQUOTED(HAVE_PAM_LIB, 1, [Define if libpam is installed])
-			AC_DEFINE(USE_PAM, 1, [Define if you want wdm to use pam for auth])],
-		,-ldl)
+AC_ARG_ENABLE([auth-scheme],
+			  [AS_HELP_STRING([--enable-auth-scheme=@<:@pam/crypt/shadow@:>@],
+							  [Choose a specific authentication scheme @<:@default=auto@:>@])],
+			  [],
+			  [enable_auth_scheme=auto])
 
-fi
+AC_ARG_ENABLE([exitlogin],
+			  [AS_HELP_STRING([--enable-exitlogin],
+							  [enable ExitLogin command in wdmLogin])],
+			  [AS_IF([test "x$enable_exitlogin" = "xyes"],
+					 [AC_DEFINE([WITH_EXITLOGIN], [1], [Define if you want to have ExitLogin])
+					 ])])
 
-if test -z "$PASSWDLIB" \
-	&& ( test "$enable_shadow" != "no" -a "$enable_pam" != "yes" \
-	|| test "$enable_pam" = "yes" -a "$enable_shadow" = "yes" ); then
 
-	AC_CHECK_LIB(shadow, main,[PASSWDLIB="-lshadow"])
-	AC_CHECK_HEADERS(shadow.h)
-fi
+AC_ARG_WITH([selinux],
+			[AS_HELP_STRING([--with-selinux],
+							[Add SELinux support])],
+			[],
+			[with_selinux=auto])
 
-AC_SUBST(PASSWDLIB)
-AC_SUBST(USE_PAM)
+AC_ARG_WITH([console-kit],
+			[AS_HELP_STRING([--with-console-kit],
+							[Add ConsoleKit support @<:@default=auto@:>@])],
+			[],
+			[with_console_kit=auto])
 
-AC_MSG_CHECKING(for SELinux support)
-AC_ARG_ENABLE(selinux,
-	AC_HELP_STRING([--enable-selinux], [enable SELinux support]),
-   [
-   	AC_MSG_RESULT(yes)
-      	AC_CHECK_LIB(selinux, is_selinux_enabled, [SELINUX_LIBS="-lselinux"
-         	AC_DEFINE_UNQUOTED(HAVE_SELINUX_LIB, 1, [Define if libselinux is installed])
-			AC_DEFINE(WITH_SELINUX, 1, [Define if you want wdm to be compiled with SELinux support])
-            	SELINUX_CFLAGS="-DWITH_SELINUX -I/usr/include/selinux"
-               ],
-               [
-			AC_MSG_WARN([libselinux not found, compiling without SELinux support])
-            	])
-   ],
-   [
-   	AC_MSG_RESULT(no)
-   ])
-AC_SUBST(SELINUX_LIBS)
-AC_SUBST(SELINUX_CFLAGS)
+AC_ARG_WITH([systemd],
+			[AS_HELP_STRING([--with-systemd],
+							[Add systemd support @<:@default=auto@:>@])],
+			[],
+			[with_systemd=auto])
 
-AC_MSG_CHECKING(for ConsoleKit support)
-AC_ARG_ENABLE(consolekit,
-	AC_HELP_STRING([--enable-consolekit], [enable ConsoleKit support]),
-    [
-	AC_MSG_RESULT(yes)
-		AC_CHECK_LIB(dbus-1, dbus_message_new_method_call, [DBUS_LIBS="-ldbus-1"
-			AC_DEFINE(WITH_CONSOLE_KIT, 1, [Define if you want wdm to be compiled with ConsoleKit support])
-           	DBUS_CFLAGS="$(pkg-config --cflags dbus-1)"
-               ],
-               [
-			AC_MSG_WARN([libdbus-1 not found, compiling without ConsoleKit support])
-            	])
-   ],
-   [
-   	AC_MSG_RESULT(no)
-   ])
-AC_SUBST(DBUS_CFLAGS)
-AC_SUBST(DBUS_LIBS)
+AC_ARG_WITH([xinerama],
+			[AS_HELP_STRING([--without-xinerama],
+							[Explicit disable use of Xinerama])],
+			[],
+			[with_xinerama=yes])
 
-AC_ARG_WITH(libaudit,
-  [  --with-libaudit=[auto/yes/no]  Add Linux audit support [default=auto]],,
-  with_libaudit=auto)
+AC_ARG_WITH([libaudit],
+			[AS_HELP_STRING([--with-libaudit],
+							[Add Linux audit support @<:@default=auto@:>@])],
+			[],
+			[with_libaudit=auto])
 
-# Check for Linux auditing API
-#
-# libaudit detection
-if test x$with_libaudit = xno ; then
-    have_libaudit=no;
-else
-    # See if we have audit daemon library
-    AC_CHECK_LIB(audit, audit_log_user_message,
-                 have_libaudit=yes, have_libaudit=no)
-fi
+AC_ARG_WITH([runlockdir],
+			[AS_HELP_STRING([--with-runlockdir=PATH],
+							[specify directory where run lock goes @<:@default=/var/run@:>@])],
+			[],
+			[with_runlockdir="/var/run"])
 
-if test x$have_libaudit = xyes ; then
-    AUDIT_LIBS="-laudit"
-    AC_DEFINE(HAVE_LIBAUDIT,1,[linux audit support])
-fi
-AC_SUBST(AUDIT_LIBS)
+AC_ARG_WITH([logdir],
+			[AS_HELP_STRING([--with-logdir=PATH],
+							[specify directory where logfile goes @<:@default=/var/log@:>@])],
+			[],
+			[with_logdir="/var/log"])
 
-            
-AC_CHECK_LIB(util, main) dnl for FreeBSD
-AC_CHECK_LIB(crypt, main) dnl for BSD and RHL
-AC_CHECK_LIB(ucb, killpg) dnl for Solaris2.4
+AC_ARG_WITH([wdmdir],
+			[AS_HELP_STRING([--with-wdmdir=PATH],
+							[specify path for wdm directory @<:@default=SYSCONFDIR/wdm@:>@])],
+			[],
+			[with_wdmdir="$sysconfdir/wdm"])
 
-AC_ARG_ENABLE(debug,
-	AC_HELP_STRING([--enable-debug],[enable debugging]),
-	[
-		CFLAGS="$CFLAGS -g -DDEBUG"
+AC_ARG_WITH([gfxdir],
+			[AS_HELP_STRING([--with-gfxdir=PATH],
+							[specify path for pixmaps directory @<:@default=DATADIR/pixmaps/wdm@:>@])],
+			[],
+			[with_gfxdir="$datadir/pixmaps/wdm"])
+
+AC_ARG_WITH([Logo],
+			[AS_HELP_STRING([--with-Logo=FILENAME],
+							[specify file in gfxdir for Logo])])
+
+AC_ARG_WITH([fakehome],
+			[AS_HELP_STRING([--with-fakehome=PATH],
+							[path to use as home when no HOME is present @<:@default=RUNDIR/wdm@:>@])],
+			[],
+			[with_fakehome="$with_runlockdir/wdm"])
+
+AC_ARG_WITH([defuserpath],
+			[AS_HELP_STRING([--with-defuserpath=PATHlist],
+							[specify list of paths for user sessions])],
+			[],
+			[with_defuserpath="/usr/local/bin:/bin:/usr/bin"])
+
+AC_ARG_WITH([defsystempath],
+			[AS_HELP_STRING([--with-defsystempath=PATHlist],[specify list of paths for superuser sessions])],
+			[],
+			[with_defsystempath="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"])
+
+
+PKG_CHECK_MODULES([XLIB], [x11 xau xmu], [],
+				  [AC_PATH_XTRA
+				   AS_IF([test "x$no_x" != "xyes"],
+						 [AC_MSG_ERROR([no (requires X development libraries)])
+						 ],
+						 [XLIB_CFLAGS="$X_CFLAGS"
+						  XLIB_LIBS="$X_PRE_LIBS $X_LIBS -lX11 -lm $X_EXTRA_LIBS"])
+				   ])
+AC_SUBST([XLIB_CFLAGS])
+AC_SUBST([XLIB_LIBS])
+
+
+PKG_CHECK_MODULES([WINGS], [WINGs], [], [AC_MSG_ERROR([Modern WINGs is required])])
+AC_SUBST([WINGS_CFLAGS])
+AC_SUBST([WINGS_LIBS])
+
+
+PKG_CHECK_MODULES([WRLIB], [wrlib], [], [AC_MSG_ERROR([Modern wraster is required])])
+AC_SUBST([WRLIB_CFLAGS])
+AC_SUBST([WRLIB_LIBS])
+
+
+AS_IF([test "x$with_selinux" != "xno"],
+	  [PKG_CHECK_MODULES([SELINUX], [libselinux],
+						 [AC_DEFINE([WITH_SELINUX], [1], [Define if you want wdm to be compiled with SELinux support])
+						 with_selinux=yes
+						 ],
+						 [AS_IF([test "x$with_selinux" != "xauto"],
+								[AC_MSG_FAILURE([--with-selinux given, but libselinux was not found])
+								],
+								[AC_MSG_WARN([libselinux not found, compiling without SELinux support])
+								])
+						 ])
+	  ])
+AC_MSG_CHECKING([for SELinux support])
+AC_SUBST([SELINUX_LIBS])
+AC_SUBST([SELINUX_CFLAGS])
+AC_MSG_RESULT([$with_selinux])
+
+
+AS_IF([test "x$with_console_kit" != "xno"],
+	  [AC_DEFINE([WITH_CONSOLE_KIT], [1], [Define if you want wdm to be compiled with ConsoleKit support])
+	  with_console_kit=yes
+	  ])
+AC_MSG_CHECKING([for ConsoleKit support])
+AC_MSG_RESULT([$with_console_kit])
+
+AS_IF([test "x$with_systemd" != "xno"],
+	  [PKG_CHECK_MODULES([SYSTEMD], [libsystemd-login libsystemd-daemon],
+						 [AC_DEFINE([WITH_SYSTEMD], [1], [Define if you wand wdm to be compiled with systemd support])
+						 with_systemd=yes
+						 ],
+						 [AS_IF([test "x$with_systemd" != "xauto"],
+								[AC_MSG_FAILURE([--with-systemd was given, but test for systemd failed])],
+								[with_systemd=no])])
+	   ])
+AC_MSG_CHECKING([for systemd support])
+AC_SUBST([SYSTEMD_LIBS])
+AC_SUBST([SYSTEMD_CFLAGS])
+AC_MSG_RESULT([$with_systemd])
+
+
+AS_IF([test "x$with_console_kit" != "xno" -o "x$with_systemd" != "xno"],
+	  [PKG_CHECK_MODULES([DBUS], [dbus-1])])
+AC_SUBST([DBUS_CFLAGS])
+AC_SUBST([DBUS_LIBS])
+
+
+AS_IF([test "x$with_xinerama" != "no"],
+	  [PKG_CHECK_MODULES([XINERAMA], [xinerama],
+						 [AC_DEFINE([HAVE_XINERAMA], [1], [Define if Xinerama library is installed])
+						 with_xinerama=yes
+						 ])
+	  ])
+AC_MSG_CHECKING([for Xinerama support])
+AC_SUBST([XINERAMA_CFLAGS])
+AC_SUBST([XINERAMA_LIBS])
+AC_MSG_RESULT([$with_xinerama])
+
+
+AS_IF([test "x$with_libaudit" != "xno"],
+    [AC_CHECK_LIB([audit], [audit_log_user_message],
+				  [AUDIT_LIBS="-laudit"
+				   AC_DEFINE([HAVE_LIBAUDIT], [1], [Linux audit support])
+				   with_libaudit=yes
+				   ],
+				   [AS_IF([test "x$with_libaudit" != "xauto"],
+						  [AC_MSG_FAILURE([--with-libaudit was given, but test for libaudit failed])])
+				   ])
 	])
-
-AC_PATH_XTRA
-XCFLAGS="$X_CFLAGS"
-XLDFLAGS="$X_LIBS"
-XLIBS="$X_PRE_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS"
-
-AC_ARG_ENABLE(xinerama,
-	AC_HELP_STRING([--disable-xinerama],[explicit disable use of libXinerama]))
-
-if test "$enable_xinerama" = "yes" -o -z "$enable_xinerama"; then
-	AC_CHECK_LIB(Xinerama, XineramaIsActive,
-	[
-		XLIBS="$XLIBS -lXinerama"
-		AC_DEFINE(HAVE_XINERAMA, 1, Define if Xinerama library is installed)
-	],,[$XLDFLAGS $XLIBS])
-fi
-
-dnl		WINGs support
-AC_CHECK_PROG(GETWINGSFLAGS,get-wings-flags,get-wings-flags,,[$PATH])
-if test -z "$GETWINGSFLAGS"; then
-	AC_MSG_ERROR(['get-wings-flags' command was not found in \$PATH, please upgrade your WindowMaker.])
-fi
-
-WCFLAGS=`get-wings-flags --cflags`
-WLDFLAGS=`get-wings-flags --ldflags`
-WLIBS=`get-wings-flags --libs`
-
-AC_SUBST(XLIBS)
-AC_SUBST(XCFLAGS)
-AC_SUBST(XLDFLAGS)
-AC_SUBST(WCFLAGS)
-AC_SUBST(WLDFLAGS)
-AC_SUBST(WLIBS)
+AC_MSG_CHECKING([for Linux audit support])
+AC_SUBST([AUDIT_LIBS])
+AC_MSG_RESULT([$with_libaudit])
 
 
-dnl ===============================================
-dnl prefix
-dnl	handle this here so we can use it
-dnl ===============================================
+AC_CHECK_LIB([WUtil], [wstrdup])
 
-dnl First, check for prefix:
-AC_MSG_CHECKING(for prefix)
-if test "$prefix" = "NONE"; then
-	prefix="/usr/local"
-fi
-AC_MSG_RESULT($prefix)
 
-AC_MSG_CHECKING(for exec_prefix)
-if test "$exec_prefix" = "NONE"; then
-	exec_prefix=$prefix
-fi
-AC_MSG_RESULT($exec_prefix)
+PASSWDLIB="-ldl"
+AS_IF([test "x$enable_auth_scheme" = "xpam" -o "x$enable_auth_scheme" = "xauto"],
+	  [AC_ARG_WITH([pamdir],
+				   [AS_HELP_STRING([--with-pamdir],
+								   [Specify where PAM files go @<:@default=SYSCONFDIR/pam.d@:>@])],
+				   [],
+				   [with_pamdir="${sysconfdir}/pam.d"])
+	  AC_SUBST([PAMDIR], ["$with_pamdir"])
+	  AC_CHECK_LIB([pam], [pam_start],
+				   [PASSWDLIB="-lpam $PASSWDLIB"
+					enable_auth_scheme=pam
+					AC_DEFINE([USE_PAM], [1], [Define if you want wdm to use pam for auth])
+					],
+					[AS_IF([test "x$enable_auth_scheme" != "xauto"],
+						   [AC_MSG_FAILURE([--enable-auth-scheme=pam given, but check for PAM failed])])])
+	  ])
+AS_IF([test "x$enable_auth_scheme" = "xshadow" -o "x$enable_auth_scheme" = "xauto"],
+	  [AC_CHECK_HEADERS([shadow.h])
+	  AC_CHECK_LIB([shadow], [getspnam],
+				   [PASSWDLIB="-lshadow $PASSWDLIB"
+					enable_auth_scheme=shadow
+					AC_DEFINE([USE_SHADOW], [1], [Define if you want wdm to use shadow passwords]),
+				   ],
+				   [AS_IF([test "x$enable_auth_scheme" != "xauto"],
+						  [AC_MSG_FAILURE([--enable-auth-scheme=shadow given, but check for libshadow failed])])])
+	  ])
+AS_IF([test "x$enable_auth_scheme" = "xcrypt" -o "x$enable_auth_scheme" = "xauto"],
+	  [AC_CHECK_LIB([crypt], [crypt],
+					[PASSWDLIB="-lcrypt"
+					 enable_auth_scheme=crypt
+					 AC_DEFINE([USE_CRYPT], [1], [Define if you want wdm to use crypt(3) for auth]),
+					],
+					[AS_IF([test "x$enable_auth_scheme" != "xauto"],
+						   [AC_MSG_FAILURE([--enable-auth-scheme=crypt given, but check for libcrypt failed])])])
+	  ])
+AS_IF([test "x$enable_auth_scheme" != "xpam" -a "x$enable_auth_scheme" != "xshadow" -a "x$enable_auth_scheme" != "xcrypt" ],
+	  [AC_MSG_FAILURE([Unable to find appropriate authentication scheme])])
 
-dnl ===============================================
-dnl specify some WITH options for these settings
-dnl ===============================================
+AC_MSG_CHECKING(for authentication scheme)
+AC_SUBST([PASSWDLIB])
+AM_CONDITIONAL([PAM], [test "x$enable_auth_scheme" = "pam"])
+AC_MSG_RESULT([$enable_auth_scheme])
 
-AC_MSG_CHECKING(for logdir)
-AC_ARG_WITH(logdir,
-	AC_HELP_STRING([--with-logdir=PATH],[specify directory where logfile goes]))
-if test "x$with_logdir" != "x"; then
-	LOGDIR=$with_logdir
-else
-	LOGDIR="/var/log"
-fi
-AC_SUBST(LOGDIR)
-AC_MSG_RESULT($LOGDIR)
 
-AC_MSG_CHECKING(for runlockdir)
-AC_ARG_WITH(runlockdir,
-	AC_HELP_STRING([--with-runlockdir=PATH],[specify directory where run lock goes]))
-if test "x$with_runlockdir" != "x"; then
-	RUNDIR=$with_runlockdir
-else
-	RUNDIR="/var/run"
-fi
-AC_SUBST(RUNDIR)
-AC_MSG_RESULT($RUNDIR)
+AC_MSG_CHECKING([for runlockdir])
+RUNDIR="$with_runlockdir"
+AC_SUBST([RUNDIR])
+AC_MSG_RESULT([$RUNDIR])
 
-AC_MSG_CHECKING(for defuserpath)
-AC_ARG_WITH(defuserpath, 
-	AC_HELP_STRING([--with-defuserpath=PATHlist],[specify list of paths for user sessions]))
-if test "x$with_defuserpath" != "x"; then
-	AC_DEFINE_UNQUOTED(DEF_USER_PATH,"$with_defuserpath", "Value is a list of paths for user sessions")
-	AC_MSG_RESULT($with_defuserpath)
-else
-	AC_DEFINE(DEF_USER_PATH,"/usr/local/bin:/bin:/usr/bin")
-	AC_MSG_RESULT([using default: /usr/local/bin:/bin:/usr/bin])
-fi
+AC_MSG_CHECKING([for logdir])
+LOGDIR="$with_logdir"
+AC_SUBST([LOGDIR])
+AC_MSG_RESULT([$LOGDIR])
 
-AC_MSG_CHECKING(for defsystempath)
-AC_ARG_WITH(defsystempath,
-	AC_HELP_STRING([--with-defsystempath=PATHlist],[specify list of paths for superuser sessions]))
-if test "x$with_defsystempath" != "x"; then
-	AC_DEFINE_UNQUOTED(DEF_SYSTEM_PATH,"$with_defsystempath", "Value is a list of paths for superuser sessions")
-	AC_MSG_RESULT($with_defsystempath)
-else
-	AC_DEFINE(DEF_SYSTEM_PATH,"/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin")
-	AC_MSG_RESULT([using default: /sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin])
-fi
+AC_MSG_CHECKING([for fake HOME])
+FAKEHOME="$with_fakehome"
+AC_DEFINE_UNQUOTED([FAKEHOME], ["$FAKEHOME"], [what to use as HOME value])
+AC_SUBST([FAKEHOME])
+AC_MSG_RESULT([$FAKEHOME])
 
-dnl user must use --with-wdmdir= rather than --sysconfigdir= to put it
-dnl somewhere other than $prefix/etc
-dnl
-AC_MSG_CHECKING(if  wdmdir has been specified)
-AC_ARG_WITH(wdmdir,
-	AC_HELP_STRING([--with-wdmdir=PATH],[specify path for wdm directory]))
-if test "x$with_wdmdir" != "x"; then
-	DMDIR="$with_wdmdir"
-	AC_MSG_RESULT([yes, using $DMDIR])
-else
-	DMDIR="$prefix/etc/wdm"
-	AC_MSG_RESULT([no, using $DMDIR])
-fi
-AC_DEFINE_UNQUOTED(WDMDIR, "$DMDIR", [Value is a path to wdm directory])
-AC_DEFINE_UNQUOTED(DEF_XDM_CONFIG, "$DMDIR/wdm-config", [Value is a path to default wdm config file])
-AC_DEFINE_UNQUOTED(DEF_WDMLOGIN_CONFIG, "$DMDIR/wdmLogin-config", [Value is a path to default wdmLogin config file])
-AC_DEFINE_UNQUOTED(DEF_CHOOSER, "$DMDIR/chooser", [Value is a path to default chooser program])
-AC_DEFINE_UNQUOTED(DEF_AUTH_DIR, "$DMDIR", [Value is a path to default authdir])
+AC_MSG_CHECKING([for default user PATH])
+AC_DEFINE_UNQUOTED([DEF_USER_PATH], ["$with_defuserpath"], ["Value is a list of paths for user sessions"])
+AC_MSG_RESULT([$with_defuserpath])
 
-AC_SUBST(DMDIR)
+AC_MSG_CHECKING([for default system PATH])
+AC_DEFINE_UNQUOTED([DEF_SYSTEM_PATH], ["$with_defsystempath"], ["Value is a list of paths for superuser sessions"])
+AC_MSG_RESULT([$with_defsystempath])
 
-dnl Let the user specify a location for pixmap files.
-dnl
-AC_MSG_CHECKING(if gfxdir has been specified)
-AC_ARG_WITH(gfxdir,
-	AC_HELP_STRING([--with-gfxdir=PATH],[specify path for pixmaps directory]))
-if test "x$with_gfxdir" != "x"; then
-	GFXDIR="$with_gfxdir"
-	AC_MSG_RESULT([yes, using $GFXDIR])
-else
-	GFXDIR="$prefix/share/pixmaps/wdm"
-	AC_MSG_RESULT([no, using $GFXDIR])
-fi
-AC_DEFINE_UNQUOTED(WGFXDIR, "$GFXDIR", [Value is a path to the pixmaps directory])
+AC_MSG_CHECKING([for wdm config directory])
+DMDIR="$with_wdmdir"
+AC_DEFINE_UNQUOTED([DEF_WDM_CONFIG], ["$DMDIR/wdm-config"], [Value is a path to default wdm config file])
+AC_DEFINE_UNQUOTED([DEF_WDMLOGIN_CONFIG], ["$DMDIR/wdmLogin-config"], [Value is a path to default wdmLogin config file])
+AC_DEFINE_UNQUOTED([DEF_CHOOSER], ["$DMDIR/chooser"], [Value is a path to default chooser program])
+AC_DEFINE_UNQUOTED([DEF_AUTH_DIR], ["$DMDIR"], [Value is a path to default authdir])
+AC_SUBST([DMDIR])
+AC_MSG_RESULT([$DMDIR])
 
-AC_SUBST(GFXDIR)
+AC_MSG_CHECKING([for pixmaps directory])
+GFXDIR="$with_gfxdir"
+AC_DEFINE_UNQUOTED([WGFXDIR], ["$GFXDIR"], [Value is a path to the pixmaps directory])
+AC_SUBST([GFXDIR])
+AC_MSG_RESULT([$GFXDIR])
 
-AC_MSG_CHECKING(if  Logo pixmap specified)
-AC_ARG_WITH(Logo,
-	AC_HELP_STRING([--with-Logo=PIXMAP_FILENAME],[specify file in wdm/pixmaps for Logo]))
-if test "x$with_Logo" != "x"; then
-	PIXMAPFILE="$with_Logo"
-	PIXMAPCOMMENT=""
-	AC_MSG_RESULT($with_Logo)
-else
-	PIXMAPFILE="Eagle.xpm"
-	PIXMAPCOMMENT="! "
-	AC_MSG_RESULT(no)
-fi
+AC_MSG_CHECKING(if Logo pixmap specified)
+AS_IF([test "x$with_Logo" != "x"],
+	  [PIXMAPFILE="$with_Logo"
+	  PIXMAPCOMMENT=""
+	  AC_MSG_RESULT([$with_Logo])
+	  ],
+	  [PIXMAPFILE="Eagle.xpm"
+	  PIXMAPCOMMENT="! "
+	  AC_MSG_RESULT(no)
+	  ])
 AC_SUBST(PIXMAPFILE)
 AC_SUBST(PIXMAPCOMMENT)
+
+
+AC_ARG_VAR([XRDB_PATH], [Path to xrdb program from X])
+AC_PATH_PROG([XRDB_PATH], [xrdb], [/bin/true])
+AC_DEFINE_UNQUOTED([XRDB_PROGRAM], ["$XRDB_PATH"], [Value is a path for xrdb program])
+
+AC_ARG_VAR([SHUTDOWN], [Path to shutdown program])
+AC_PATH_PROG([SHUTDOWN], [shutdown], [/bin/false], [$PATH:/sbin:/usr/sbin])
+AC_SUBST([SHUTDOWN])
+
+AC_ARG_VAR([FAILSAFE_PATH], [Path to program, that is used as failsafe client])
+AC_PATH_PROG([FAILSAFE_PATH], [xterm])
+AC_DEFINE_UNQUOTED([DEF_FAILSAFE_CLIENT], ["$FAILSAFE_PATH"], [Value is a path for program used as failsafe client])
+AC_DEFINE_UNQUOTED([DEF_SESSION], ["$FAILSAFE_PATH -ls"], [Value is a command for default session])
+AC_SUBST([FAILSAFE_PATH])
+
+AC_ARG_VAR([DEF_SERVER], [Path to default X server])
+AC_PATH_PROG([DEF_SERVER], [X])
+AC_DEFINE_UNQUOTED([DEF_SERVER_LINE], [":0 local $DEF_SERVER :0"], [Value is default command to start X server])
+AC_SUBST([DEF_SERVER])
+
+
 
 
 
@@ -428,22 +443,7 @@ fi
 AC_SUBST(WMLIST)
 
 
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION(0.18.1)
-if test "x$USE_NLS" != "x"; then
-	AC_DEFINE(I18N, 1, [Define if you want internationalization support])
-fi
-
 dnl this is hackaround for libfontconfig bug
-AC_ARG_WITH(fakehome,
-	AC_HELP_STRING([--with-fakehome=PATH],[path to use as home when no HOME is present. [RUNDIR/wdm] ]))
-
-FAKEHOME="$RUNDIR/wdm"
-if test "x$with_fakehome" != "x"; then
-	FAKEHOME=$with_fakehome
-fi
-AC_DEFINE_UNQUOTED(FAKEHOME, "$FAKEHOME", [what to use as HOME value])
-AC_SUBST(FAKEHOME)
 
 AC_ARG_ENABLE(aafont,
 	AC_HELP_STRING([--enable-aafont],[enable support for antialiased fonts.]))
@@ -451,23 +451,6 @@ if test "$enable_aafont" = "yes"; then
 	AC_DEFINE(USE_AA, 1, [Define if you want support for antialiased fonts])
 fi
 
-AC_ARG_ENABLE(exitlogin,
-	AC_HELP_STRING([--enable-exitlogin],[enable ExitLogin command in wdmLogin.]))
-if test "$enable_exitlogin" = "yes"; then
-	AC_DEFINE(WITH_EXITLOGIN, 1, [Define if you want to have ExitLogin])
-fi
-
 AC_CONFIG_FILES([Makefile
-				 configs/GiveConsole
-				 configs/TakeConsole
-				 configs/wdm-config
-				 configs/Xreset
-				 configs/Xservers
-				 configs/Xsession
-				 configs/Xsetup_0
-				 configs/Xstartup
-				 doc/wdm.man
-				 po/Makefile.in
-				 wdm.spec])
+				 po/Makefile.in])
 AC_OUTPUT
-

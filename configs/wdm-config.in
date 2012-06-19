@@ -73,4 +73,3 @@ DisplayManager*wdmRoot:         false
 DisplayManager*wdmAnimations:   true
 ! true=enable, false=disable(default) launching X servers sequentially
 ! DisplayManager*wdmSequentialXServerLaunch:   false
-

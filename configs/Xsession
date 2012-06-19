@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# cleanup wdm resources
+xrdb -load /dev/null
+
+# redirect errors to a file in user's home directory if we can
+
+mktemp="$(type -p mktemp)"
+errfile="$HOME/.xsession-errors"
+if ( umask 077 && cp /dev/null "$errfile" 2> /dev/null )
+then
+	exec > "$errfile" 2>&1
+elif test -x "$mktemp"
+	for errfile in "${TMPDIR-/tmp}/xses-$USER" "/tmp/xses-$USER"
+	do
+		if ef="$( umask 077 && $mktemp "$errfile.XXXXXX" 2> /dev/null)"
+		then
+			exec > "$ef" 2>&1
+			mv "$ef" "$errfile" 2> /dev/null
+			break
+		fi
+	done
+else
+# Since this system doesn't have a mktemp command to allow secure
+# creation of files in shared directories, no fallback error log
+# is being used.   See https://bugs.freedesktop.org/show_bug.cgi?id=5898
+#
+# 	for errfile in "${TMPDIR-/tmp}/xses-$USER" "/tmp/xses-$USER"
+#	do
+#		if ( umask 077 && cp /dev/null "$errfile" 2> /dev/null )
+#		then
+#			exec > "$errfile" 2>&1
+#			break
+#		fi
+#	done
+
+	exec > /dev/null 2>&1
+fi
+
+startup=$HOME/.xsession
+resources=$HOME/.Xresources
+
+if [ -r "$resources" ]; then
+	xrdb -load "$resources"
+fi
+
+case $# in
+1)
+	case $1 in
+	failsafe)
+		exec -l $SHELL -c "xterm -geometry 80x24-0-0"
+		;;
+	esac
+esac
+
+if [ -s "$startup" ]; then
+	exec -l $SHELL -c "$startup" || \
+	exec /bin/sh -c "exec -l $SHELL -c \"$startup\""
+else
+	exec -l $SHELL -c "xsm" ||
+	exec /bin/sh -c "exec -l $SHELL -c \"xsm\"" ||
+fi

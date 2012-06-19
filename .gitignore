@@ -1,18 +1,18 @@
 .deps/
+autom4te.cache/
 bin/
 m4/
 
-*.o
+.dirstamp
+
 *~
-*/*~
-*/*/*~
+*.o
+*.sw?
 
 configs/GiveConsole
 configs/TakeConsole
 configs/Xreset
 configs/Xservers
-configs/Xsession
-configs/Xsetup_0
 configs/Xstartup
 configs/wdm-config
 
@@ -24,14 +24,14 @@ po/POTFILES
 po/insert-header.sed
 po/remove-potcdate.sed
 
-po/Makefile
-po/Makefile.in
+include/config.h
+include/config.h.in
+include/stamp-h1
 
 INSTALL
 Makefile
 Makefile.in
 aclocal.m4
-autom4te.cache/
 compile
 config.guess
 config.log
@@ -40,8 +40,6 @@ config.status
 config.sub
 configure
 depcomp
-include/config.h
-include/config.h.in
-include/stamp-h1
 install-sh
 missing
+wdm.spec
