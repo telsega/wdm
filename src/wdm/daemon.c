@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/daemon.c,v 3.17 2001/12/14 20:01:21 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  */
 
@@ -74,7 +74,7 @@ BecomeOrphan (void)
      * init (pid 1).
      * Separate the child into its own process group before the parent
      * exits.  This eliminates the possibility that the child might get
-     * killed when the init script that's running xdm exits.
+     * killed when the init script that's running wdm exits.
      */
 
     child_id = fork();

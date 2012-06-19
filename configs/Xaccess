@@ -20,16 +20,16 @@
 #
 #       %name		list of hosts ...
 #
-# The first form tells xdm which displays to respond to itself.
-# The second form tells xdm to forward indirect queries from hosts matching
+# The first form tells wdm which displays to respond to itself.
+# The second form tells wdm to forward indirect queries from hosts matching
 # the specified pattern to the indicated list of hosts.
-# The third form tells xdm to handle indirect queries using the chooser;
+# The third form tells wdm to handle indirect queries using the chooser;
 # the chooser is directed to send its own queries out via the broadcast
 # address and display the results on the terminal.
 # The fourth form is similar to the third, except instead of using the
 # broadcast address, it sends DirectQuerys to each of the hosts in the list
 #
-# In all cases, xdm uses the first entry which matches the terminal;
+# In all cases, wdm uses the first entry which matches the terminal;
 # for IndirectQuery messages only entries with right hand sides can
 # match, for Direct and Broadcast Query messages, only entries without
 # right hand sides can match.

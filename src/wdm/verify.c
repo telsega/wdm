@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/greeter/verify.c,v 3.21 2001/12/14 20:01:29 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * verify.c
@@ -208,7 +208,7 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 		bzero(greet->password, strlen(greet->password));
 		return 0;
 	}
-	if ((style = login_getstyle(lc, style, "xdm")) == NULL) {
+	if ((style = login_getstyle(lc, style, "wdm")) == NULL) {
 		Debug("login_getstyle() failed.\n");
 		bzero(greet->password, strlen(greet->password));
 		return 0;
@@ -244,7 +244,7 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 		return 0;
 	}
 	/* Run the approval script */
-	if (!auth_approval(as, lc, greet->name, "auth-xdm")) {
+	if (!auth_approval(as, lc, greet->name, "auth-wdm")) {
 		Debug("login not approved\n");
 		bzero(greet->password, strlen(greet->password));
 		auth_close(as);

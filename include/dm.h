@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/dm.h,v 3.28 2002/01/14 22:49:45 herrb Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * dm.h

@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/auth.c,v 3.24 2001/12/14 20:01:19 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * auth.c
@@ -438,7 +438,7 @@ SetLocalAuthorization (struct display *d)
 }
 
 /*
- * Set the authorization to use for xdm's initial connection
+ * Set the authorization to use for wdm's initial connection
  * to the X server.  Cannot use user-based authorizations
  * because no one has logged in yet, so we don't have any
  * user credentials.

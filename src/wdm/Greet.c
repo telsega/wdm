@@ -31,7 +31,7 @@ from the X Consortium.
 */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * widget to get username/password

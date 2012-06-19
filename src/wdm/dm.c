@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/dm.c,v 3.19 2001/12/14 20:01:21 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * display manager
@@ -102,7 +102,7 @@ static SIGVAL ChildNotify (int n);
 
 static int StorePid (void);
 
-static int parent_pid = -1; 	/* PID of parent xdm process */
+static int parent_pid = -1; 	/* PID of parent wdm process */
 
 extern int wdmSequentialXServerLaunch;
 
@@ -147,7 +147,7 @@ main (int argc, char **argv)
 	if (oldpid == -1)
 	    WDMError("Can't create/lock pid file %s\n", pidFile);
 	else
-	    WDMError("Can't lock pid file %s, another xdm is running "
+	    WDMError("Can't lock pid file %s, another wdm is running "
 			    "(pid %d)\n", pidFile, oldpid);
 	exit (1);
     }
@@ -176,7 +176,7 @@ main (int argc, char **argv)
     init_session_id ();
     CreateWellKnownSockets ();
 #else
-    WDMDebug("xdm: not compiled for XDMCP\n");
+    WDMDebug("wdm: not compiled for XDMCP\n");
 #endif
     parent_pid = getpid ();
     (void) Signal (SIGTERM, StopAll);
@@ -371,13 +371,13 @@ StopAll (int n)
     if (parent_pid != getpid())
     {
 	/* 
-	 * We are a child xdm process that was killed by the
-	 * master xdm before we were able to return from fork()
+	 * We are a child wdm process that was killed by the
+	 * master wdm before we were able to return from fork()
 	 * and remove this signal handler.
 	 *
 	 * See defect XWSog08655 for more information.
 	 */
-	WDMDebug("Child xdm caught SIGTERM before it remove that signal.\n");
+	WDMDebug("Child wdm caught SIGTERM before it remove that signal.\n");
 	(void) Signal (n, SIG_DFL);
 	TerminateProcess (getpid(), SIGTERM);
 	errno = olderrno;

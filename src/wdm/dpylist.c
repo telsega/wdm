@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/dpylist.c,v 1.5 2001/12/14 20:01:21 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * a simple linked list of known displays

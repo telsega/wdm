@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/netaddr.c,v 3.6 2001/12/14 20:01:22 dawes Exp $ */
 
 /*
- * xdm - X display manager
+ * wdm - WINGs Display Manager
  *
  * netaddr.c - Interpretation of XdmcpNetaddr object.
  */

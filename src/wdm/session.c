@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/session.c,v 3.33 2001/12/14 20:01:23 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * session.c
@@ -197,7 +197,7 @@ AbortClient (int pid)
 	if (killpg (pid, sig) == -1) {
 	    switch (errno) {
 	    case EPERM:
-		WDMError ("xdm can't kill client\n");
+		WDMError ("wdm can't kill client\n");
 	    case EINVAL:
 	    case ESRCH:
 		return;

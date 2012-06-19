@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/resource.c,v 3.7 2001/12/14 20:01:23 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * resource.c
@@ -132,10 +132,10 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #define DEF_FAILSAFE_CLIENT "/usr/bin/X11/xterm"
 #endif
 #ifndef DEF_WDM_CONFIG
-#define DEF_WDM_CONFIG "/usr/lib/X11/xdm/xdm-config"
+#define DEF_WDM_CONFIG "/usr/lib/X11/wdm/wdm-config"
 #endif
 #ifndef DEF_CHOOSER
-#define DEF_CHOOSER "/usr/lib/X11/xdm/chooser"
+#define DEF_CHOOSER "/usr/lib/X11/wdm/chooser"
 #endif
 #ifndef DEF_AUTH_NAME
 #ifdef HASXDMAUTH
@@ -145,7 +145,7 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #endif
 #endif
 #ifndef DEF_AUTH_DIR
-#define DEF_AUTH_DIR "/usr/lib/X11/xdm"
+#define DEF_AUTH_DIR "/usr/lib/X11/wdm"
 #endif
 #ifndef DEF_USER_AUTH_DIR
 #define DEF_USER_AUTH_DIR	"/tmp"
@@ -163,7 +163,7 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #define DEF_RANDOM_FILE "/dev/mem"
 #endif
 #ifndef DEF_GREETER_LIB
-#define DEF_GREETER_LIB "/X11/lib/X11/xdm/libXdmGreet.so"
+#define DEF_GREETER_LIB "/X11/lib/X11/wdm/libWdmGreet.so"
 #endif
 #else
 /* unfortunately I have to declare all of them, because there is a limit
@@ -190,10 +190,10 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #define DEF_FAILSAFE_CLIENT "/XFree86/bin/xterm"
 #endif
 #ifndef DEF_WDM_CONFIG
-#define DEF_WDM_CONFIG "/XFree86/lib/X11/xdm/xdm-config"
+#define DEF_WDM_CONFIG "/XFree86/lib/X11/wdm/wdm-config"
 #endif
 #ifndef DEF_CHOOSER
-#define DEF_CHOOSER "/XFree86/lib/X11/xdm/chooser"
+#define DEF_CHOOSER "/XFree86/lib/X11/wdm/chooser"
 #endif
 #ifndef DEF_AUTH_NAME
 #ifdef HASXDMAUTH
@@ -203,7 +203,7 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #endif
 #endif
 #ifndef DEF_AUTH_DIR
-#define DEF_AUTH_DIR "/XFree86/lib/X11/xdm"
+#define DEF_AUTH_DIR "/XFree86/lib/X11/wdm"
 #endif
 #ifndef DEF_USER_AUTH_DIR
 #define DEF_USER_AUTH_DIR	"/tmp"
@@ -221,7 +221,7 @@ int_resource	wdmSequentialXServerLaunch;/* if true, launch multiple X servers */
 #define DEF_RANDOM_FILE ""
 #endif
 #ifndef DEF_GREETER_LIB
-#define DEF_GREETER_LIB "/XFree86/lib/X11/xdm/libXdmGreet.so"
+#define DEF_GREETER_LIB "/XFree86/lib/X11/wdm/libWdmGreet.so"
 #endif
 
 #endif /* __EMX__ */

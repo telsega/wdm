@@ -203,11 +203,6 @@ to pass on to the \fIXsetup\fP,
 A file to checksum to generate the seed of authorization keys.
 This should be a file that changes frequently.
 The default is \fI/dev/mem\fP.
-.IP \fBDisplayManager.greeterLib\fP
-On systems that support a dynamically-loadable greeter library, the
-name of the library.  The default is
-\fI/usr/lib/X11/xdm/libXdmGreet.so\fP.
-.I This not used in Debian.
 .IP \fBDisplayManager.choiceTimeout\fP
 Number of seconds to wait for display to respond after user has
 selected a host from the chooser.  If the display sends an XDMCP
@@ -487,12 +482,12 @@ named \fIwdm-config\fP:
 
 .ta .5i 4i
 
-	DisplayManager.servers:	/usr/X11R6/lib/X11/xdm/Xservers
-	DisplayManager.errorLogFile:	/usr/X11R6/lib/X11/xdm/xdm-errors
-	DisplayManager*resources:	/usr/X11R6/lib/X11/xdm/Xresources
-	DisplayManager*startup:	/usr/X11R6/lib/X11/xdm/Xstartup
-	DisplayManager*session:	/usr/X11R6/lib/X11/xdm/Xsession
-	DisplayManager.pidFile:	/usr/X11R6/lib/X11/xdm/xdm-pid
+	DisplayManager.servers:	/usr/X11R6/lib/X11/wdm/Xservers
+	DisplayManager.errorLogFile:	/usr/X11R6/lib/X11/wdm/xdm-errors
+	DisplayManager*resources:	/usr/X11R6/lib/X11/wdm/Xresources
+	DisplayManager*startup:	/usr/X11R6/lib/X11/wdm/Xstartup
+	DisplayManager*session:	/usr/X11R6/lib/X11/wdm/Xsession
+	DisplayManager.pidFile:	/usr/X11R6/lib/X11/wdm/xdm-pid
 	DisplayManager._0.authorize:	true
 	DisplayManager*authorize:	false
 

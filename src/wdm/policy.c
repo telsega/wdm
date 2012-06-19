@@ -28,7 +28,7 @@ from The Open Group.
 */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * policy.c.  Implement site-dependent policy for XDMCP connections

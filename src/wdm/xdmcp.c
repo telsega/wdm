@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/xdmcp.c,v 3.19 2001/12/14 20:01:25 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * xdmcp.c - Support for XDMCP

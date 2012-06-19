@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/socket.c,v 3.10 2001/12/14 20:01:24 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  *
  * socket.c - Support for BSD sockets

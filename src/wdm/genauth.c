@@ -29,7 +29,7 @@ from The Open Group.
 /* $XFree86: xc/programs/xdm/genauth.c,v 3.13 2001/12/14 20:01:22 dawes Exp $ */
 
 /*
- * xdm - display manager daemon
+ * wdm - WINGs Display Manager
  * Author:  Keith Packard, MIT X Consortium
  */
 

@@ -24,7 +24,7 @@
 /*
  * This is a simple test program to test the interface to
  * the external Login program rather than doing the whole
- * xdm thing.  This program is part of the Gdm package but
+ * wdm thing.  This program is part of the Gdm package but
  * is NOT an installed program -- it is only used in development
  * and testing of "new" external Login programs.
  *
@@ -40,7 +40,7 @@
  ************************************************************************
  * The interface protocol:
  *
- *      A) xdm -> Login
+ *      A) wdm -> Login
  *              1. SIGTERM to terminate sucessfully
  *              2. SIGUSR1 to indicate failure; retry
  *              3. "variables" which are needed by Login
@@ -49,8 +49,8 @@
  *                 it simple for Login. The values to be passed
  *                 can be set as Xresources
  *
- *      B) xdm <- Login ... This is performed via a pipe with
- *         xdm/greet doing reads and Login doing writes.  The
+ *      B) wdm <- Login ... This is performed via a pipe with
+ *         wdm/greet doing reads and Login doing writes.  The
  *         stream of bytes follows the following protocol:
  *              1. A String is defined as a one byte length field
  *                 followed by a string of non-zero bytes.
@@ -64,7 +64,7 @@
  *                      1 - xsession parameter (original)
  *                      2 - reboot (added) - shutdown -r now
  *                      3 - halt (added) - shutdown -h now
- *                      4 - exit (added) - exit Gdm/xdm
+ *                      4 - exit (added) - exit Gdm//xdm/wdm
  *              5. The extension byte is followed by a string.
  *              6. The string is follwed by another extension byte
  *                 or a zero to indicate end-of-data.  Normally, there

@@ -47,12 +47,12 @@ typedef enum {
 } greet_user_rtn;
 
 /*
- * GreetUser can either handle the user's session or allow xdm to do it.
- * The return or exit status of GreetUser indicates to xdm whether it
+ * GreetUser can either handle the user's session or allow wdm to do it.
+ * The return or exit status of GreetUser indicates to wdm whether it
  * should start a session.
  * 
- * GreetUser is passed the xdm struct display pointer, a pointer to a
- * Display, and pointers to greet and verify structs.  If it expectes xdm
+ * GreetUser is passed the wdm struct display pointer, a pointer to a
+ * Display, and pointers to greet and verify structs.  If it expectes wdm
  * to run the session, it fills in the Display pointer and the fields
  * of the greet and verify structs.
  * 
@@ -60,7 +60,7 @@ typedef enum {
  * environment for the session, and environment for startup/reset.
  * 
  * The greet struct includes the user's name and password but these are
- * really only needed if xdm is compiled with a user-based authorization
+ * really only needed if wdm is compiled with a user-based authorization
  * option such as SECURE_RPC or K5AUTH.
  */
 

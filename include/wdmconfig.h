@@ -5,7 +5,7 @@
 #include <config.h>
 #endif
 
-/* xdm stuff which should always be defined */
+/* wdm stuff which should always be defined */
 
 #define UNIXCONN
 #define TCPCONN
