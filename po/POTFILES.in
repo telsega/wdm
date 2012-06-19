@@ -1,5 +1,4 @@
 # List of source files which contain translatable strings.
-src/chooser.c
 src/libwdm/debug.c
 src/libwdm/environment.c
 src/libwdm/names.c
