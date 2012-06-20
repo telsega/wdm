@@ -162,7 +162,6 @@ extern DisplayType parseDisplayType(char *string, int *usedDefault);
 typedef enum fileState { NewEntry, OldEntry, MissingEntry } FileState;
 
 struct display {
-	struct display *next;
 	/* Xservers file / XDMCP information */
 	char *name;					/* DISPLAY name */
 	char *class;				/* display class (may be NULL) */
@@ -245,7 +244,6 @@ struct display {
 #define XDM_BROKEN_INTERVAL (10)	/* server crashing more than once within */
 									/* two minutes is assumed to be broken!  */
 struct protoDisplay {
-	struct protoDisplay *next;
 	XdmcpNetaddr address;		/* UDP address */
 	int addrlen;				/* UDP address length */
 	unsigned long date;			/* creation date */

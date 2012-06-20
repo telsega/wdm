@@ -44,6 +44,8 @@ in this Software without prior written authorization from The Open Group.
 
 #include <wdmlib.h>
 
+#include <WINGs/WUtil.h>
+
 #define ALIAS_CHARACTER	    '%'
 #define NEGATE_CHARACTER    '!'
 #define CHOOSER_STRING	    "CHOOSER"
@@ -57,7 +59,6 @@ in this Software without prior written authorization from The Open Group.
 #define HOST_NOBROADCAST    4
 
 typedef struct _hostEntry {
-	struct _hostEntry *next;
 	int type;
 	union _hostOrAlias {
 		char *aliasName;
@@ -70,7 +71,6 @@ typedef struct _hostEntry {
 #define DISPLAY_ADDRESS	    2
 
 typedef struct _displayEntry {
-	struct _displayEntry *next;
 	int type;
 	int notAllowed;
 	int notBroadcast;
@@ -83,10 +83,10 @@ typedef struct _displayEntry {
 			CARD16 connectionType;
 		} displayAddress;
 	} entry;
-	HostEntry *hosts;
+	WMArray *hosts;
 } DisplayEntry;
 
-static DisplayEntry *database;
+static WMArray *database = NULL;
 
 static ARRAY8 localAddress;
 
@@ -116,12 +116,11 @@ static void FreeHostEntry(HostEntry * h)
 	case HOST_CHOOSER:
 		break;
 	}
-	free((char *)h);
+	free(h);
 }
 
 static void FreeDisplayEntry(DisplayEntry * d)
 {
-	HostEntry *h, *next;
 	switch (d->type) {
 	case DISPLAY_ALIAS:
 		free(d->entry.aliasName);
@@ -133,22 +132,8 @@ static void FreeDisplayEntry(DisplayEntry * d)
 		XdmcpDisposeARRAY8(&d->entry.displayAddress.clientAddress);
 		break;
 	}
-	for (h = d->hosts; h; h = next) {
-		next = h->next;
-		FreeHostEntry(h);
-	}
-	free((char *)d);
-}
-
-static void FreeAccessDatabase(void)
-{
-	DisplayEntry *d, *next;
-
-	for (d = database; d; d = next) {
-		next = d->next;
-		FreeDisplayEntry(d);
-	}
-	database = 0;
+	WMFreeArray(d->hosts);
+	free(d);
 }
 
 #define WORD_LEN    256
@@ -268,7 +253,7 @@ static DisplayEntry *ReadDisplayEntry(FILE * file)
 	char *displayOrAlias;
 	DisplayEntry *d;
 	struct _display *display;
-	HostEntry *h, **prev;
+	HostEntry *h;
 	struct hostent *hostent;
 
 	displayOrAlias = ReadWord(file, FALSE);
@@ -329,7 +314,7 @@ static DisplayEntry *ReadDisplayEntry(FILE * file)
 			}
 		}
 	}
-	prev = &d->hosts;
+	d->hosts = WMCreateArrayWithDestructor(0, (void (*) (void*)) FreeHostEntry);
 	while ((h = ReadHostEntry(file))) {
 		if (h->type == HOST_CHOOSER) {
 			FreeHostEntry(h);
@@ -338,31 +323,29 @@ static DisplayEntry *ReadDisplayEntry(FILE * file)
 			FreeHostEntry(h);
 			d->notBroadcast = 1;
 		} else {
-			*prev = h;
-			prev = &h->next;
+			WMAddToArray(d->hosts, h);
 		}
 	}
-	*prev = NULL;
 	return d;
 }
 
 static void ReadAccessDatabase(FILE * file)
 {
-	DisplayEntry *d, **prev;
+	DisplayEntry *d;
 
-	prev = &database;
 	while ((d = ReadDisplayEntry(file))) {
-		*prev = d;
-		prev = &d->next;
+		WMAddToArray(database, d);
 	}
-	*prev = NULL;
 }
 
 int ScanAccessDatabase(void)
 {
 	FILE *datafile;
 
-	FreeAccessDatabase();
+	if (database == NULL)
+		database = WMCreateArrayWithDestructor(0, (void (*) (void*)) FreeDisplayEntry);
+
+	WMEmptyArray(database);
 	if (*accessFile) {
 		datafile = fopen(accessFile, "r");
 		if (!datafile) {
@@ -387,12 +370,14 @@ static int indirectAlias(char *alias,
 						 CARD16 connectionType, ChooserFunc function, char *closure, int depth, int broadcast);
 
 static int
-scanHostlist(HostEntry * h,
+scanHostlist(WMArray *hostlist,
 			 ARRAY8Ptr clientAddress, CARD16 connectionType, ChooserFunc function, char *closure, int depth, int broadcast)
 {
+	HostEntry * h;
 	int haveLocalhost = 0;
+	int i;
 
-	for (; h; h = h->next) {
+	for (h = WMArrayFirst(hostlist, &i); h; h = WMArrayNext(hostlist, &i)) {
 		switch (h->type) {
 		case HOST_ALIAS:
 			if (indirectAlias(h->entry.aliasName, clientAddress, connectionType, function, closure, depth, broadcast))
@@ -465,10 +450,11 @@ indirectAlias(char *alias,
 {
 	DisplayEntry *d;
 	int haveLocalhost = 0;
+	int i;
 
 	if (depth == MAX_DEPTH)
 		return 0;
-	for (d = database; d; d = d->next) {
+	for (d = WMArrayFirst(database, &i); d; d = WMArrayNext(database, &i)) {
 		if (d->type != DISPLAY_ALIAS || !patternMatch(alias, d->entry.aliasName))
 			continue;
 		if (scanHostlist(d->hosts, clientAddress, connectionType, function, closure, depth + 1, broadcast)) {
@@ -483,8 +469,9 @@ int ForEachMatchingIndirectHost(ARRAY8Ptr clientAddress, CARD16 connectionType, 
 	int haveLocalhost = 0;
 	DisplayEntry *d;
 	char *clientName = NULL;
+	int i;
 
-	for (d = database; d; d = d->next) {
+	for (d = WMArrayFirst(database, &i); d; d = WMArrayNext(database, &i)) {
 		switch (d->type) {
 		case DISPLAY_ALIAS:
 			continue;
@@ -527,8 +514,9 @@ int UseChooser(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
 	DisplayEntry *d;
 	char *clientName = NULL;
+	int i;
 
-	for (d = database; d; d = d->next) {
+	for (d = WMArrayFirst(database, &i); d; d = WMArrayNext(database, &i)) {
 		switch (d->type) {
 		case DISPLAY_ALIAS:
 			continue;
@@ -566,8 +554,9 @@ void ForEachChooserHost(ARRAY8Ptr clientAddress, CARD16 connectionType, ChooserF
 	int haveLocalhost = 0;
 	DisplayEntry *d;
 	char *clientName = NULL;
+	int i;
 
-	for (d = database; d; d = d->next) {
+	for (d = WMArrayFirst(database, &i); d; d = WMArrayNext(database, &i)) {
 		switch (d->type) {
 		case DISPLAY_ALIAS:
 			continue;
@@ -610,12 +599,13 @@ int AcceptableDisplayAddress(ARRAY8Ptr clientAddress, CARD16 connectionType, xdm
 {
 	DisplayEntry *d;
 	char *clientName = NULL;
+	int i;
 
 	if (!*accessFile)
 		return 1;
 	if (type == INDIRECT_QUERY)
 		return 1;
-	for (d = database; d; d = d->next) {
+	for (d = WMArrayFirst(database, &i); d; d = WMArrayNext(database, &i)) {
 		if (d->hosts)
 			continue;
 		switch (d->type) {

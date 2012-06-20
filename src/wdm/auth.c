@@ -47,6 +47,8 @@ from The Open Group.
 
 #include <wdmlib.h>
 
+#include <WINGs/WUtil.h>
+
 #if defined(TCPCONN)
 #include <dm_socket.h>
 #endif
@@ -459,26 +461,29 @@ struct addrList {
 	char *number;
 	unsigned short name_length;
 	char *name;
-	struct addrList *next;
 };
 
-static struct addrList *addrs;
+static WMArray *addrs = NULL;
+
+static void freeAddr(struct addrList *a)
+{
+	if (a->address)
+		free(a->address);
+	if (a->number)
+		free(a->number);
+	free(a);
+}
 
 static void initAddrs(void)
 {
-	addrs = 0;
+	addrs = WMCreateArrayWithDestructor(0, (void (*) (void*)) freeAddr);
 }
 
 static void doneAddrs(void)
 {
-	struct addrList *a, *n;
-	for (a = addrs; a; a = n) {
-		n = a->next;
-		if (a->address)
-			free(a->address);
-		if (a->number)
-			free(a->number);
-		free((char *)a);
+	if (addrs != NULL) {
+		WMFreeArray(addrs);
+		addrs = NULL;
 	}
 }
 
@@ -527,15 +532,15 @@ static void saveEntry(Xauth * auth)
 	} else
 		new->name = 0;
 	new->family = auth->family;
-	new->next = addrs;
-	addrs = new;
+	WMAddToArray(addrs, new);
 }
 
 static int checkEntry(Xauth * auth)
 {
 	struct addrList *a;
+	int i;
 
-	for (a = addrs; a; a = a->next) {
+	for (a = WMArrayFirst(addrs, &i); a; a = WMArrayNext(addrs, &i)) {
 		if (a->family == auth->family &&
 			a->address_length == auth->address_length &&
 			binaryEqual(a->address, auth->address, auth->address_length) &&

@@ -54,6 +54,8 @@ in this Software without prior written authorization from The Open Group.
 
 #include <wdmlib.h>
 
+#include <WINGs/WUtil.h>
+
 static int FormatBytes(unsigned char *data, int length, char *buf, int buflen)
 {
 	int i;
@@ -87,57 +89,79 @@ static int ARRAY8ToDottedDecimal(ARRAY8Ptr a, char *buf, int buflen)
 }
 
 typedef struct _IndirectUsers {
-	struct _IndirectUsers *next;
 	ARRAY8 client;
 	CARD16 connectionType;
 } IndirectUsersRec, *IndirectUsersPtr;
 
-static IndirectUsersPtr indirectUsers;
+static WMArray *indirectUsers = NULL;
+
+static void freeIndirectUser(IndirectUsersPtr i)
+{
+	XdmcpDisposeARRAY8(&i->client);
+	free(i);
+}
+
+struct _IndirectUserMatchData {
+	ARRAY8Ptr clientAddress;
+	CARD16 connectionType;
+};
+
+static int matchIndirectUser(const IndirectUsersPtr i, const struct _IndirectUserMatchData *match)
+{
+	return match->connectionType == i->connectionType && XdmcpARRAY8Equal(match->clientAddress, &i->client);
+}
 
 int RememberIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
 	IndirectUsersPtr i;
 
-	for (i = indirectUsers; i; i = i->next)
-		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType)
+	if (indirectUsers == NULL) {
+		indirectUsers = WMCreateArrayWithDestructor(0, (void (*) (void*)) freeIndirectUser);
+	} else {
+		struct _IndirectUserMatchData d;
+
+		d.clientAddress = clientAddress;
+		d.connectionType = connectionType;
+
+		if (WMFindInArray(indirectUsers, (WMMatchDataProc *) matchIndirectUser, &d) != WANotFound)
 			return 1;
+	}
+
 	i = (IndirectUsersPtr) malloc(sizeof(IndirectUsersRec));
 	if (!XdmcpCopyARRAY8(clientAddress, &i->client)) {
 		free((char *)i);
 		return 0;
 	}
 	i->connectionType = connectionType;
-	i->next = indirectUsers;
-	indirectUsers = i;
+	WMAddToArray(indirectUsers, i);
+
 	return 1;
 }
 
 void ForgetIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
-	IndirectUsersPtr i, prev;
+	if (indirectUsers != NULL) {
+		struct _IndirectUserMatchData d;
 
-	prev = 0;
-	for (i = indirectUsers; i; i = i->next) {
-		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType) {
-			if (prev)
-				prev->next = i->next;
-			else
-				indirectUsers = i->next;
-			XdmcpDisposeARRAY8(&i->client);
-			free((char *)i);
-			break;
-		}
-		prev = i;
+		d.clientAddress = clientAddress;
+		d.connectionType = connectionType;
+
+		WMRemoveFromArrayMatching(indirectUsers, (WMMatchDataProc *) matchIndirectUser, &d);
 	}
 }
 
 int IsIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
-	IndirectUsersPtr i;
+	if (indirectUsers != NULL) {
+		struct _IndirectUserMatchData d;
 
-	for (i = indirectUsers; i; i = i->next)
-		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType)
+		d.clientAddress = clientAddress;
+		d.connectionType = connectionType;
+
+		if (WMFindInArray(indirectUsers, (WMMatchDataProc *) matchIndirectUser, &d) != WANotFound)
 			return 1;
+	}
+
 	return 0;
 }
 
@@ -188,7 +212,7 @@ typedef struct _Choices {
 	Time_t time;
 } ChoiceRec, *ChoicePtr;
 
-static ChoicePtr choices;
+static ChoicePtr choices = NULL;
 
 ARRAY8Ptr IndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {

@@ -41,30 +41,49 @@ in this Software without prior written authorization from The Open Group.
 
 #include <wdmlib.h>
 
-static struct protoDisplay *protoDisplays;
+#include <WINGs/WUtil.h>
+
+static WMArray *protoDisplays = NULL;
+
+struct _matchAddress {
+	XdmcpNetaddr address;
+	int addrlen;
+	CARD16 displayNumber;
+};
+
+static int matchAddress(const struct protoDisplay *pdpy, struct _matchAddress *a)
+{
+	if (pdpy->displayNumber == a->displayNumber && addressEqual(a->address, a->addrlen, pdpy->address, pdpy->addrlen))
+		return 1;
+	return 0;
+}
 
 struct protoDisplay *FindProtoDisplay(XdmcpNetaddr address, int addrlen, CARD16 displayNumber)
 {
-	struct protoDisplay *pdpy;
-
 	WDMDebug("FindProtoDisplay\n");
-	for (pdpy = protoDisplays; pdpy; pdpy = pdpy->next) {
-		if (pdpy->displayNumber == displayNumber && addressEqual(address, addrlen, pdpy->address, pdpy->addrlen)) {
-			return pdpy;
-		}
+	if (protoDisplays != NULL) {
+		int i;
+		struct _matchAddress a;
+
+		a.address = address;
+		a.addrlen = addrlen;
+		a.displayNumber = displayNumber;
+
+		if ((i = WMFindInArray(protoDisplays, (WMMatchDataProc *) matchAddress, &a)) != WANotFound)
+			return WMGetFromArray(protoDisplays, i);
 	}
-	return (struct protoDisplay *)0;
+	return NULL;
+}
+
+static int matchTimeout(const struct protoDisplay *pdpy, Time_t *now)
+{
+	return pdpy->date < *now - PROTO_TIMEOUT;
 }
 
 static void TimeoutProtoDisplays(Time_t now)
 {
-	struct protoDisplay *pdpy, *next;
-
-	for (pdpy = protoDisplays; pdpy; pdpy = next) {
-		next = pdpy->next;
-		if (pdpy->date < now - PROTO_TIMEOUT)
-			DisposeProtoDisplay(pdpy);
-	}
+	if (protoDisplays != NULL)
+		WMRemoveFromArrayMatching(protoDisplays, (WMMatchDataProc *) matchTimeout, &now);
 }
 
 struct protoDisplay *NewProtoDisplay(XdmcpNetaddr address,
@@ -75,6 +94,9 @@ struct protoDisplay *NewProtoDisplay(XdmcpNetaddr address,
 	Time_t date;
 
 	WDMDebug("NewProtoDisplay\n");
+	if (protoDisplays == NULL)
+		protoDisplays = WMCreateArrayWithDestructor(0, (void (*) (void*)) DisposeProtoDisplay);
+
 	time(&date);
 	TimeoutProtoDisplays(date);
 	pdpy = (struct protoDisplay *)malloc(sizeof *pdpy);
@@ -98,28 +120,12 @@ struct protoDisplay *NewProtoDisplay(XdmcpNetaddr address,
 	pdpy->sessionID = sessionID;
 	pdpy->fileAuthorization = (Xauth *) NULL;
 	pdpy->xdmcpAuthorization = (Xauth *) NULL;
-	pdpy->next = protoDisplays;
-	protoDisplays = pdpy;
+	WMAddToArray(protoDisplays, pdpy);
 	return pdpy;
 }
 
-void DisposeProtoDisplay(pdpy)
-struct protoDisplay *pdpy;
+void DisposeProtoDisplay(struct protoDisplay *pdpy)
 {
-	struct protoDisplay *p, *prev;
-
-	prev = 0;
-	for (p = protoDisplays; p; p = p->next) {
-		if (p == pdpy)
-			break;
-		prev = p;
-	}
-	if (!p)
-		return;
-	if (prev)
-		prev->next = pdpy->next;
-	else
-		protoDisplays = pdpy->next;
 	bzero(&pdpy->key, sizeof(pdpy->key));
 	if (pdpy->fileAuthorization)
 		XauDisposeAuth(pdpy->fileAuthorization);

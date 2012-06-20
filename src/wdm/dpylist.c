@@ -35,147 +35,147 @@ from The Open Group.
 #include <dm.h>
 #include <wdmlib.h>
 
-static struct display *displays;
+#include <WINGs/WUtil.h>
+
+static WMArray *displays = NULL;
 static int no_xserver_started = 1;
 
 int AnyDisplaysLeft(void)
 {
-	return no_xserver_started || (displays != (struct display *)0);
+	return no_xserver_started || (displays != NULL && WMGetArrayItemCount(displays) > 0);
 }
 
 void ForEachDisplay(void (*f) (struct display *))
 {
-	struct display *d, *next;
-
-	for (d = displays; d; d = next) {
-		next = d->next;
-		(*f) (d);
+	if (displays != NULL) {
+		WMMapArray(displays, (void (*) (void *, void *)) f, NULL);
 	}
 }
 
-struct display *FindDisplayByName(char *name)
-{
-	struct display *d;
-
-	for (d = displays; d; d = d->next)
-		if (!strcmp(name, d->name))
-			return d;
-	return 0;
+#define matchEq(a, b) ((a) == (b))
+#define defineFindDisplayBy(What, Type, Arg, Match) \
+static int match##What(const struct display *d, Type *Arg) \
+{ \
+	return Match(*Arg, d->Arg); \
+} \
+\
+struct display *FindDisplayBy##What(Type Arg) \
+{ \
+	if (displays != NULL) { \
+		int i; \
+\
+		if ((i = WMFindInArray(displays, (WMMatchDataProc *) match##What, &Arg)) != WANotFound) \
+			return WMGetFromArray(displays, i); \
+	} \
+\
+	return NULL; \
 }
 
-struct display *FindDisplayByPid(int pid)
-{
-	struct display *d;
-
-	for (d = displays; d; d = d->next)
-		if (pid == d->pid)
-			return d;
-	return 0;
-}
-
-struct display *FindDisplayByServerPid(int serverPid)
-{
-	struct display *d;
-
-	for (d = displays; d; d = d->next)
-		if (serverPid == d->serverPid)
-			return d;
-	return 0;
-}
-
+defineFindDisplayBy(Name, char *, name, !strcmp);
+defineFindDisplayBy(Pid, int, pid, matchEq);
+defineFindDisplayBy(ServerPid, int, serverPid, matchEq);
 #ifdef XDMCP
+defineFindDisplayBy(SessionID, CARD32, sessionID, matchEq);
 
-struct display *FindDisplayBySessionID(CARD32 sessionID)
+struct _matchAddress {
+	XdmcpNetaddr addr;
+	int addrlen;
+	CARD16 displayNumber;
+};
+
+static int matchAddress(const struct display *d, struct _matchAddress *a)
 {
-	struct display *d;
-
-	for (d = displays; d; d = d->next)
-		if (sessionID == d->sessionID)
-			return d;
+	if (d->displayType.origin == FromXDMCP &&
+		d->displayNumber == a->displayNumber && addressEqual(d->from, d->fromlen, a->addr, a->addrlen))
+		return 1;
 	return 0;
 }
 
 struct display *FindDisplayByAddress(XdmcpNetaddr addr, int addrlen, CARD16 displayNumber)
 {
-	struct display *d;
+	if (displays != NULL) {
+		int i;
+		struct _matchAddress a;
 
-	for (d = displays; d; d = d->next)
-		if (d->displayType.origin == FromXDMCP &&
-			d->displayNumber == displayNumber && addressEqual(d->from, d->fromlen, addr, addrlen)) {
-			return d;
-		}
-	return 0;
+		a.addr = addr;
+		a.addrlen = addrlen;
+		a.displayNumber = displayNumber;
+
+		if ((i = WMFindInArray(displays, (WMMatchDataProc *) matchAddress, &a)) != WANotFound)
+			return WMGetFromArray(displays, i);
+	}
+
+	return NULL;
 }
 
 #endif							/* XDMCP */
+
+#undef defineFindDisplayBy
+#undef matchEq
 
 #define IfFree(x)  if (x) free ((char *) x)
 
 void RemoveDisplay(struct display *old)
 {
-	struct display *d, *p;
+	if (displays != NULL)
+		WMRemoveFromArrayMatching(displays, NULL, old);
+}
+
+static void freeDisplay(struct display *d)
+{
 	char **x;
 	int i;
 
-	p = 0;
-	for (d = displays; d; d = d->next) {
-		if (d == old) {
-			if (p)
-				p->next = d->next;
-			else
-				displays = d->next;
-			IfFree(d->name);
-			IfFree(d->class);
-			for (x = d->argv; x && *x; x++)
-				IfFree(*x);
-			IfFree(d->argv);
-			IfFree(d->resources);
-			IfFree(d->xrdb);
-			IfFree(d->setup);
-			IfFree(d->startup);
-			IfFree(d->reset);
-			IfFree(d->session);
-			IfFree(d->userPath);
-			IfFree(d->systemPath);
-			IfFree(d->systemShell);
-			IfFree(d->failsafeClient);
-			IfFree(d->chooser);
-			if (d->authorizations) {
-				for (i = 0; i < d->authNum; i++)
-					XauDisposeAuth(d->authorizations[i]);
-				free((char *)d->authorizations);
-			}
-			IfFree(d->clientAuthFile);
-			if (d->authFile)
-				(void)unlink(d->authFile);
-			IfFree(d->authFile);
-			IfFree(d->userAuthDir);
-			for (x = d->authNames; x && *x; x++)
-				IfFree(*x);
-			IfFree(d->authNames);
-			IfFree(d->authNameLens);
-#ifdef XDMCP
-			IfFree(d->peer);
-			IfFree(d->from);
-			XdmcpDisposeARRAY8(&d->clientAddr);
-#endif
-			free((char *)d);
-			break;
-		}
-		p = d;
+	IfFree(d->name);
+	IfFree(d->class);
+	for (x = d->argv; x && *x; x++)
+		IfFree(*x);
+	IfFree(d->argv);
+	IfFree(d->resources);
+	IfFree(d->xrdb);
+	IfFree(d->setup);
+	IfFree(d->startup);
+	IfFree(d->reset);
+	IfFree(d->session);
+	IfFree(d->userPath);
+	IfFree(d->systemPath);
+	IfFree(d->systemShell);
+	IfFree(d->failsafeClient);
+	IfFree(d->chooser);
+	if (d->authorizations) {
+		for (i = 0; i < d->authNum; i++)
+			XauDisposeAuth(d->authorizations[i]);
+		free((char *)d->authorizations);
 	}
+	IfFree(d->clientAuthFile);
+	if (d->authFile)
+		(void)unlink(d->authFile);
+	IfFree(d->authFile);
+	IfFree(d->userAuthDir);
+	for (x = d->authNames; x && *x; x++)
+		IfFree(*x);
+	IfFree(d->authNames);
+	IfFree(d->authNameLens);
+#ifdef XDMCP
+	IfFree(d->peer);
+	IfFree(d->from);
+	XdmcpDisposeARRAY8(&d->clientAddr);
+#endif
+	free((char *)d);
 }
 
 struct display *NewDisplay(char *name, char *class)
 {
 	struct display *d;
 
+	if (displays == NULL)
+		displays = WMCreateArrayWithDestructor(0, (void (*) (void*)) freeDisplay);
+
 	d = (struct display *)malloc(sizeof(struct display));
 	if (!d) {
 		WDMError("NewDisplay: out of memory");
 		return 0;
 	}
-	d->next = displays;
 	d->name = malloc((unsigned)(strlen(name) + 1));
 	if (!d->name) {
 		WDMError("NewDisplay: out of memory");
@@ -243,7 +243,8 @@ struct display *NewDisplay(char *name, char *class)
 	d->connectionType = 0;
 #endif
 	d->version = 1;				/* registered with The Open Group */
-	displays = d;
+
+	WMAddToArray(displays, d);
 
 	no_xserver_started = 0;
 
