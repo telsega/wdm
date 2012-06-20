@@ -805,7 +805,7 @@ static void manage(struct sockaddr *from, int fromlen, int length)
 				memmove(class, displayClass.data, displayClass.length);
 				class[displayClass.length] = '\0';
 			} else {
-				free((char *)class);
+				free(class);
 				class = (char *)NULL;
 			}
 			from_save = (XdmcpNetaddr) malloc(fromlen);
@@ -816,7 +816,7 @@ static void manage(struct sockaddr *from, int fromlen, int length)
 			memmove(from_save, from, fromlen);
 			d = NewDisplay(name, class);
 			if (!d) {
-				free((char *)from_save);
+				free(from_save);
 				send_failed(from, fromlen, name, sessionID, "out of memory");
 				goto abort;
 			}
@@ -843,8 +843,8 @@ static void manage(struct sockaddr *from, int fromlen, int length)
 			if (pdpy->fileAuthorization) {
 				d->authorizations = (Xauth **) malloc(sizeof(Xauth *));
 				if (!d->authorizations) {
-					free((char *)from_save);
-					free((char *)d);
+					free(from_save);
+					free(d);
 					send_failed(from, fromlen, name, sessionID, "out of memory");
 					goto abort;
 				}
@@ -860,9 +860,9 @@ static void manage(struct sockaddr *from, int fromlen, int length)
  abort:
 	XdmcpDisposeARRAY8(&displayClass);
 	if (name)
-		free((char *)name);
+		free(name);
 	if (class)
-		free((char *)class);
+		free(class);
 }
 
 void SendFailed(struct display *d, char *reason)

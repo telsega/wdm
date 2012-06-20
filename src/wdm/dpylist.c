@@ -113,7 +113,7 @@ struct display *FindDisplayByAddress(XdmcpNetaddr addr, int addrlen, CARD16 disp
 #undef defineFindDisplayBy
 #undef matchEq
 
-#define IfFree(x)  if (x) free ((char *) x)
+#define IfFree(x)  if (x) free(x)
 
 void RemoveDisplay(struct display *old)
 {
@@ -145,7 +145,7 @@ static void freeDisplay(struct display *d)
 	if (d->authorizations) {
 		for (i = 0; i < d->authNum; i++)
 			XauDisposeAuth(d->authorizations[i]);
-		free((char *)d->authorizations);
+		free(d->authorizations);
 	}
 	IfFree(d->clientAuthFile);
 	if (d->authFile)
@@ -161,7 +161,7 @@ static void freeDisplay(struct display *d)
 	IfFree(d->from);
 	XdmcpDisposeARRAY8(&d->clientAddr);
 #endif
-	free((char *)d);
+	free(d);
 }
 
 struct display *NewDisplay(char *name, char *class)
@@ -179,7 +179,7 @@ struct display *NewDisplay(char *name, char *class)
 	d->name = malloc((unsigned)(strlen(name) + 1));
 	if (!d->name) {
 		WDMError("NewDisplay: out of memory");
-		free((char *)d);
+		free(d);
 		return 0;
 	}
 	strcpy(d->name, name);
@@ -188,7 +188,7 @@ struct display *NewDisplay(char *name, char *class)
 		if (!d->class) {
 			WDMError("NewDisplay: out of memory");
 			free(d->name);
-			free((char *)d);
+			free(d);
 			return 0;
 		}
 		strcpy(d->class, class);

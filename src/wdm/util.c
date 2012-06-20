@@ -68,7 +68,7 @@ char **parseArgs(char **argv, char *string)
 				save = malloc((unsigned)(string - word + 1));
 				if (!newargv || !save) {
 					WDMError("parseArgs: out of memory");
-					free((char *)argv);
+					free(argv);
 					if (save)
 						free(save);
 					return 0;
@@ -98,7 +98,7 @@ void freeArgs(char **argv)
 
 	for (a = argv; *a; a++)
 		free(*a);
-	free((char *)argv);
+	free(argv);
 }
 
 void CleanUpChild(void)

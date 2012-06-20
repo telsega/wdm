@@ -234,7 +234,7 @@ static void GetRemoteAddress(struct display *d, int fd)
 	int len = sizeof(buf);
 
 	if (d->peer)
-		free((char *)d->peer);
+		free(d->peer);
 	getpeername(fd, (struct sockaddr *)buf, (void *)&len);
 	d->peerlen = 0;
 	if (len) {

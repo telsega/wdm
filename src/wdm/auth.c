@@ -347,7 +347,7 @@ void SetLocalAuthorization(struct display *d)
 	if (d->authorizations) {
 		for (i = 0; i < d->authNum; i++)
 			XauDisposeAuth(d->authorizations[i]);
-		free((char *)d->authorizations);
+		free(d->authorizations);
 		d->authorizations = (Xauth **) NULL;
 		d->authNum = 0;
 	}
@@ -356,7 +356,7 @@ void SetLocalAuthorization(struct display *d)
 	for (i = 0; d->authNames[i]; i++) ;
 	d->authNameNum = i;
 	if (d->authNameLens)
-		free((char *)d->authNameLens);
+		free(d->authNameLens);
 	d->authNameLens = (unsigned short *)malloc(d->authNameNum * sizeof(unsigned short));
 	if (!d->authNameLens)
 		return;
@@ -377,7 +377,7 @@ void SetLocalAuthorization(struct display *d)
 	} else {
 		for (i = 0; i < j; i++)
 			XauDisposeAuth(auths[i]);
-		free((char *)auths);
+		free(auths);
 	}
 }
 
@@ -502,7 +502,7 @@ static void saveEntry(Xauth * auth)
 		new->address = malloc(auth->address_length);
 		if (!new->address) {
 			WDMError("saveEntry: out of memory");
-			free((char *)new);
+			free(new);
 			return;
 		}
 		memmove(new->address, auth->address, (int)auth->address_length);
@@ -513,7 +513,7 @@ static void saveEntry(Xauth * auth)
 		if (!new->number) {
 			WDMError("saveEntry: out of memory");
 			free(new->address);
-			free((char *)new);
+			free(new);
 			return;
 		}
 		memmove(new->number, auth->number, (int)auth->number_length);
@@ -525,7 +525,7 @@ static void saveEntry(Xauth * auth)
 			WDMError("saveEntry: out of memory");
 			free(new->number);
 			free(new->address);
-			free((char *)new);
+			free(new);
 			return;
 		}
 		memmove(new->name, auth->name, (int)auth->name_length);

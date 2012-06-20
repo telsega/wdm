@@ -207,7 +207,7 @@ static HostEntry *ReadHostEntry(FILE * file)
 		h->type = HOST_ALIAS;
 		h->entry.aliasName = malloc(strlen(hostOrAlias) + 1);
 		if (!h->entry.aliasName) {
-			free((char *)h);
+			free(h);
 			return NULL;
 		}
 		strcpy(h->entry.aliasName, hostOrAlias);
@@ -223,12 +223,12 @@ static HostEntry *ReadHostEntry(FILE * file)
 		if (!hostent) {
 			WDMDebug("No such host %s\n", hostOrAlias);
 			WDMError("Access file \"%s\", host \"%s\" not found\n", accessFile, hostOrAlias);
-			free((char *)h);
+			free(h);
 			goto tryagain;
 		}
 		if (!XdmcpAllocARRAY8(&h->entry.hostAddress, hostent->h_length)) {
 			WDMError("ReadHostEntry: out of memory\n");
-			free((char *)h);
+			free(h);
 			return NULL;
 		}
 		memmove(h->entry.hostAddress.data, hostent->h_addr, hostent->h_length);
@@ -267,7 +267,7 @@ static DisplayEntry *ReadDisplayEntry(FILE * file)
 		d->type = DISPLAY_ALIAS;
 		d->entry.aliasName = malloc(strlen(displayOrAlias) + 1);
 		if (!d->entry.aliasName) {
-			free((char *)d);
+			free(d);
 			return NULL;
 		}
 		strcpy(d->entry.aliasName, displayOrAlias);
@@ -280,20 +280,20 @@ static DisplayEntry *ReadDisplayEntry(FILE * file)
 			d->type = DISPLAY_PATTERN;
 			d->entry.displayPattern = malloc(strlen(displayOrAlias) + 1);
 			if (!d->entry.displayPattern) {
-				free((char *)d);
+				free(d);
 				return NULL;
 			}
 			strcpy(d->entry.displayPattern, displayOrAlias);
 		} else {
 			if ((hostent = gethostbyname(displayOrAlias)) == NULL) {
 				WDMError("Access file %s, display %s unknown\n", accessFile, displayOrAlias);
-				free((char *)d);
+				free(d);
 				return NULL;
 			}
 			d->type = DISPLAY_ADDRESS;
 			display = &d->entry.displayAddress;
 			if (!XdmcpAllocARRAY8(&display->clientAddress, hostent->h_length)) {
-				free((char *)d);
+				free(d);
 				return NULL;
 			}
 			memmove(display->clientAddress.data, hostent->h_addr, hostent->h_length);

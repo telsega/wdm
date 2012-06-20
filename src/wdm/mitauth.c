@@ -67,13 +67,13 @@ Xauth *MitGetAuth(unsigned short namelen, char *name)
 
 	new->data = (char *)malloc(AUTH_DATA_LEN);
 	if (!new->data) {
-		free((char *)new);
+		free(new);
 		return (Xauth *) 0;
 	}
 	new->name = (char *)malloc(namelen);
 	if (!new->name) {
-		free((char *)new->data);
-		free((char *)new);
+		free(new->data);
+		free(new);
 		return (Xauth *) 0;
 	}
 	memmove((char *)new->name, name, namelen);

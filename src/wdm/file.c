@@ -49,7 +49,7 @@ static void freeFileArgs(char **args)
 
 	for (a = args; *a; a++)
 		free(*a);
-	free((char *)args);
+	free(args);
 }
 
 static char **splitIntoWords(char *s)
@@ -119,7 +119,7 @@ static void freeSomeArgs(char **args, int n)
 	a = args;
 	while (n--)
 		free(*a++);
-	free((char *)args);
+	free(args);
 }
 
 void ParseDisplay(char *source, DisplayType * acceptableTypes, int numAcceptable)

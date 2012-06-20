@@ -129,7 +129,7 @@ int RememberIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 
 	i = (IndirectUsersPtr) malloc(sizeof(IndirectUsersRec));
 	if (!XdmcpCopyARRAY8(clientAddress, &i->client)) {
-		free((char *)i);
+		free(i);
 		return 0;
 	}
 	i->connectionType = connectionType;
@@ -232,7 +232,7 @@ ARRAY8Ptr IndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType)
 				choices = next;
 			XdmcpDisposeARRAY8(&c->client);
 			XdmcpDisposeARRAY8(&c->choice);
-			free((char *)c);
+			free(c);
 		} else {
 			if (XdmcpARRAY8Equal(clientAddress, &c->client) && connectionType == c->connectionType)
 				return &c->choice;
@@ -268,7 +268,7 @@ static int RegisterIndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType
 			return 0;
 		c->connectionType = connectionType;
 		if (!XdmcpCopyARRAY8(clientAddress, &c->client)) {
-			free((char *)c);
+			free(c);
 			return 0;
 		}
 	} else {
@@ -276,7 +276,7 @@ static int RegisterIndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType
 	}
 	if (!XdmcpCopyARRAY8(choice, &c->choice)) {
 		XdmcpDisposeARRAY8(&c->client);
-		free((char *)c);
+		free(c);
 		return 0;
 	}
 	if (insert) {
@@ -303,7 +303,7 @@ CARD16 connectionType;
 				choices = c->next;
 			XdmcpDisposeARRAY8(&c->client);
 			XdmcpDisposeARRAY8(&c->choice);
-			free((char *)c);
+			free(c);
 			return;
 		}
 		prev = c;
