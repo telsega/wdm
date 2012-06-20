@@ -25,108 +25,93 @@
 #include <stdlib.h>
 #include <string.h>
 
-static Bool WDMCheckPLGeometry(WMPropList *pl, void *def, void *target);
+static Bool WDMCheckPLGeometry(WMPropList * pl, void *def, void *target);
 
-static WMRect default_geometry = {{INT_MIN, INT_MIN}, {530, 240}};
+static WMRect default_geometry = { {INT_MIN, INT_MIN}, {530, 240} };
 
-static WDMDictionaryStruct wdmLogin_config_struct[] = 
-{
+static WDMDictionaryStruct wdmLogin_config_struct[] = {
 	{"geometry", WDMCheckPLGeometry, &default_geometry,
-		offsetof(WDMLoginConfig, geometry)},
+	 offsetof(WDMLoginConfig, geometry)},
 #ifdef USE_AA
-	{"aa", WDMCheckPLBool, (void*)False,
-		offsetof(WDMLoginConfig, aaenabled)},
-	{"multibyte", WDMCheckPLBool, (void*)True,
-		offsetof(WDMLoginConfig, multibyte)},
+	{"aa", WDMCheckPLBool, (void *)False,
+	 offsetof(WDMLoginConfig, aaenabled)},
+	{"multibyte", WDMCheckPLBool, (void *)True,
+	 offsetof(WDMLoginConfig, multibyte)},
 #endif
 	{"animations", WDMCheckPLBool, False,
-		offsetof(WDMLoginConfig, animations)},
+	 offsetof(WDMLoginConfig, animations)},
 	{NULL, NULL, NULL, 0}
 };
 
-static WDMDictionarySpec wdmLogin_config =
-	{sizeof(WDMLoginConfig), wdmLogin_config_struct};
-	
-static Bool WDMCheckPLInteger(WMPropList *pl, void *def, void *target)
+static WDMDictionarySpec wdmLogin_config = { sizeof(WDMLoginConfig), wdmLogin_config_struct };
+
+static Bool WDMCheckPLInteger(WMPropList * pl, void *def, void *target)
 {
 	int *int_target = (int *)target;
 	int int_def = (int)def;
 	char *text = NULL;
 	char *endptr = NULL;
 
-	WDMDebug("WDMCheckPLInteger(%p, %p, %p)\n", (void*)pl, def, target);
-	
+	WDMDebug("WDMCheckPLInteger(%p, %p, %p)\n", (void *)pl, def, target);
+
 	*int_target = int_def;
-	if(pl && WMIsPLString(pl))
-	{
+	if (pl && WMIsPLString(pl)) {
 		text = WMGetFromPLString(pl);
-		if(text != NULL)
+		if (text != NULL)
 			*int_target = strtol(text, &endptr, 0);
 	}
 	return True;
 }
 
-static Bool WDMCheckPLUInteger(WMPropList *pl, void *def, void *target)
+static Bool WDMCheckPLUInteger(WMPropList * pl, void *def, void *target)
 {
 	unsigned int *int_target = (unsigned int *)target;
 	unsigned int int_def = (unsigned int)def;
 	char *text = NULL;
 	char *endptr = NULL;
 
-	WDMDebug("WDMCheckPLUInteger(%p, %p, %p)\n", (void*)pl, def, target);
-	
+	WDMDebug("WDMCheckPLUInteger(%p, %p, %p)\n", (void *)pl, def, target);
+
 	*int_target = int_def;
-	if(pl && WMIsPLString(pl))
-	{
+	if (pl && WMIsPLString(pl)) {
 		text = WMGetFromPLString(pl);
-		if(text != NULL)
+		if (text != NULL)
 			*int_target = strtoul(text, &endptr, 0);
 	}
 	return True;
 }
 
-static Bool WDMCheckPLGeometry(WMPropList *pl, void *def, void *target)
+static Bool WDMCheckPLGeometry(WMPropList * pl, void *def, void *target)
 {
-	WMRect *rect_target = (WMRect *)target;
+	WMRect *rect_target = (WMRect *) target;
 
-	WDMDebug("WDMCheckPLGeometry(%p, %p, %p)\n", (void*)pl, def, target);
+	WDMDebug("WDMCheckPLGeometry(%p, %p, %p)\n", (void *)pl, def, target);
 
-	if(def)
+	if (def)
 		memcpy(rect_target, def, sizeof(WMRect));
 
-	if(pl != NULL && WMIsPLArray(pl))
-	{
-		WDMCheckPLUInteger(WMGetFromPLArray(pl, 0),
-				(void*)rect_target->size.width,
-				&rect_target->size.width);
-		WDMCheckPLUInteger(WMGetFromPLArray(pl, 1),
-				(void*)rect_target->size.height,
-				&rect_target->size.height);
-		WDMCheckPLInteger(WMGetFromPLArray(pl, 2),
-				(void*)rect_target->pos.x,
-				&rect_target->pos.x);
-		WDMCheckPLInteger(WMGetFromPLArray(pl, 3),
-				(void*)rect_target->pos.y,
-				&rect_target->pos.y);
+	if (pl != NULL && WMIsPLArray(pl)) {
+		WDMCheckPLUInteger(WMGetFromPLArray(pl, 0), (void *)rect_target->size.width, &rect_target->size.width);
+		WDMCheckPLUInteger(WMGetFromPLArray(pl, 1), (void *)rect_target->size.height, &rect_target->size.height);
+		WDMCheckPLInteger(WMGetFromPLArray(pl, 2), (void *)rect_target->pos.x, &rect_target->pos.x);
+		WDMCheckPLInteger(WMGetFromPLArray(pl, 3), (void *)rect_target->pos.y, &rect_target->pos.y);
 		return True;
 	}
 	return False;
 }
 
-WDMLoginConfig *
-LoadConfiguration(char *configFile)
+WDMLoginConfig *LoadConfiguration(char *configFile)
 {
 	char *filename = configFile ? configFile : DEF_WDMLOGIN_CONFIG;
 	WMPropList *db;
 	WDMLoginConfig *config = NULL;
 
 	db = WMReadPropListFromFile(filename);
-	if(db == NULL)
+	if (db == NULL)
 		WDMError("Cannot open config file. Using builtin defaults\n");
-	if(!WDMCheckPLDictionary(db, &wdmLogin_config, &config))
+	if (!WDMCheckPLDictionary(db, &wdmLogin_config, &config))
 		WDMError("Error parsing config file. Using builtin defaults\n");
-	if(db)
+	if (db)
 		WMReleasePropList(db);
 	return config;
 }
-

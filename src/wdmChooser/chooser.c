@@ -21,8 +21,7 @@
 #include <wdmlib.h>
 #include <stdlib.h>
 
-void
-closeAction(WMWidget *self, void *data)
+void closeAction(WMWidget * self, void *data)
 {
 	WMDestroyWidget(self);
 	exit(0);
@@ -35,9 +34,8 @@ int main(int argc, char *argv[])
 
 	WMInitializeApplication("wdmChooser", &argc, argv);
 	scr = WMOpenScreen(NULL);
-	if(scr == NULL)
+	if (scr == NULL)
 		WDMPanic("could not initialize Screen");
-
 
 	win = WMCreateWindow(scr, "wdmChooser");
 	WMResizeWidget(win, 600, 300);

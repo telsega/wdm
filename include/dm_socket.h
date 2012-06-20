@@ -37,13 +37,13 @@ authorization.
 #include <X11/Xdmcp.h>
 
 #ifndef Lynx
-# include <sys/socket.h>
+#include <sys/socket.h>
 #else
-# include <socket.h>
+#include <socket.h>
 #endif
 #include <netinet/in.h>
 
 /* ugly, but we need this after socket.h */
-extern ARRAY8Ptr Accept (struct sockaddr *from, int fromlen, CARD16 displayNumber);
+extern ARRAY8Ptr Accept(struct sockaddr *from, int fromlen, CARD16 displayNumber);
 
-#endif /* _DM_SOCKET_H_ */
+#endif							/* _DM_SOCKET_H_ */

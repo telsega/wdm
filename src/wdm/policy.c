@@ -32,148 +32,117 @@ from The Open Group.
  * policy.c.  Implement site-dependent policy for XDMCP connections
  */
 
-# include <dm.h>
-# include <dm_auth.h>
+#include <dm.h>
+#include <dm_auth.h>
 
 #include <errno.h>
 
 #ifdef XDMCP
 
-# include <X11/X.h>
+#include <X11/X.h>
 
-# include <dm_socket.h>
+#include <dm_socket.h>
 
 static ARRAY8 noAuthentication = { (CARD16) 0, (CARD8Ptr) 0 };
 
 typedef struct _XdmAuth {
-    ARRAY8  authentication;
-    ARRAY8  authorization;
+	ARRAY8 authentication;
+	ARRAY8 authorization;
 } XdmAuthRec, *XdmAuthPtr;
 
 static XdmAuthRec auth[] = {
 #ifdef HASXDMAUTH
-{ {(CARD16) 20, (CARD8 *) "XDM-AUTHENTICATION-1"},
-  {(CARD16) 19, (CARD8 *) "XDM-AUTHORIZATION-1"},
-},
+	{{(CARD16) 20, (CARD8 *) "XDM-AUTHENTICATION-1"},
+	 {(CARD16) 19, (CARD8 *) "XDM-AUTHORIZATION-1"},
+	 },
 #endif
-{ {(CARD16) 0, (CARD8 *) 0},
-  {(CARD16) 0, (CARD8 *) 0},
-}
+	{{(CARD16) 0, (CARD8 *) 0},
+	 {(CARD16) 0, (CARD8 *) 0},
+	 }
 };
 
 #define NumAuth	(sizeof auth / sizeof auth[0])
 
-ARRAY8Ptr
-ChooseAuthentication (ARRAYofARRAY8Ptr authenticationNames)
+ARRAY8Ptr ChooseAuthentication(ARRAYofARRAY8Ptr authenticationNames)
 {
-    int	i, j;
+	int i, j;
 
-    for (i = 0; i < (int)authenticationNames->length; i++)
-	for (j = 0; j < NumAuth; j++)
-	    if (XdmcpARRAY8Equal (&authenticationNames->data[i],
-				  &auth[j].authentication))
-		return &authenticationNames->data[i];
-    return &noAuthentication;
+	for (i = 0; i < (int)authenticationNames->length; i++)
+		for (j = 0; j < NumAuth; j++)
+			if (XdmcpARRAY8Equal(&authenticationNames->data[i], &auth[j].authentication))
+				return &authenticationNames->data[i];
+	return &noAuthentication;
 }
 
-int
-CheckAuthentication (
-    struct protoDisplay	*pdpy,
-    ARRAY8Ptr		displayID,
-    ARRAY8Ptr		name,
-    ARRAY8Ptr		data)
+int CheckAuthentication(struct protoDisplay *pdpy, ARRAY8Ptr displayID, ARRAY8Ptr name, ARRAY8Ptr data)
 {
 #ifdef HASXDMAUTH
-    if (name->length && !strncmp ((char *)name->data, "XDM-AUTHENTICATION-1", 20))
-	return XdmCheckAuthentication (pdpy, displayID, name, data);
+	if (name->length && !strncmp((char *)name->data, "XDM-AUTHENTICATION-1", 20))
+		return XdmCheckAuthentication(pdpy, displayID, name, data);
 #endif
-    return TRUE;
+	return TRUE;
 }
 
-int
-SelectAuthorizationTypeIndex (
-    ARRAY8Ptr		authenticationName,
-    ARRAYofARRAY8Ptr	authorizationNames)
+int SelectAuthorizationTypeIndex(ARRAY8Ptr authenticationName, ARRAYofARRAY8Ptr authorizationNames)
 {
-    int	i, j;
+	int i, j;
 
-    for (j = 0; j < NumAuth; j++)
-	if (XdmcpARRAY8Equal (authenticationName,
-			      &auth[j].authentication))
-	    break;
-    if (j < NumAuth)
-    {
-    	for (i = 0; i < (int)authorizationNames->length; i++)
-	    if (XdmcpARRAY8Equal (&authorizationNames->data[i],
-				  &auth[j].authorization))
-	    	return i;
-    }
-    for (i = 0; i < (int)authorizationNames->length; i++)
-	if (ValidAuthorization (authorizationNames->data[i].length,
-				(char *) authorizationNames->data[i].data))
-	    return i;
-    return -1;
-}
-
-int
-Willing (
-    ARRAY8Ptr	    addr,
-    CARD16	    connectionType,
-    ARRAY8Ptr	    authenticationName,
-    ARRAY8Ptr	    status,
-    xdmOpCode	    type)
-{
-    char	statusBuf[256];
-    int		ret;
-    
-    ret = AcceptableDisplayAddress (addr, connectionType, type);
-    if (!ret)
-	sprintf (statusBuf, "Display not authorized to connect");
-    else
-    {
-        if (*willing)
-	{   FILE *fd = NULL;
-	    if ((fd = popen(willing, "r")))
-	    {
-		char *s = NULL;
-		while(!(s = fgets(statusBuf, 256, fd)) && errno == EINTR)
-			;
-		if(s)
-			statusBuf[strlen(statusBuf)-1] = 0; /* chop newline */
-		else
-			sprintf (statusBuf, "Willing, but %s failed",willing);
-	    }
-	    else
-	        sprintf (statusBuf, "Willing, but %s failed",willing);
-	    if (fd) pclose(fd);
+	for (j = 0; j < NumAuth; j++)
+		if (XdmcpARRAY8Equal(authenticationName, &auth[j].authentication))
+			break;
+	if (j < NumAuth) {
+		for (i = 0; i < (int)authorizationNames->length; i++)
+			if (XdmcpARRAY8Equal(&authorizationNames->data[i], &auth[j].authorization))
+				return i;
 	}
+	for (i = 0; i < (int)authorizationNames->length; i++)
+		if (ValidAuthorization(authorizationNames->data[i].length, (char *)authorizationNames->data[i].data))
+			return i;
+	return -1;
+}
+
+int Willing(ARRAY8Ptr addr, CARD16 connectionType, ARRAY8Ptr authenticationName, ARRAY8Ptr status, xdmOpCode type)
+{
+	char statusBuf[256];
+	int ret;
+
+	ret = AcceptableDisplayAddress(addr, connectionType, type);
+	if (!ret)
+		sprintf(statusBuf, "Display not authorized to connect");
+	else {
+		if (*willing) {
+			FILE *fd = NULL;
+			if ((fd = popen(willing, "r"))) {
+				char *s = NULL;
+				while (!(s = fgets(statusBuf, 256, fd)) && errno == EINTR) ;
+				if (s)
+					statusBuf[strlen(statusBuf) - 1] = 0;	/* chop newline */
+				else
+					sprintf(statusBuf, "Willing, but %s failed", willing);
+			} else
+				sprintf(statusBuf, "Willing, but %s failed", willing);
+			if (fd)
+				pclose(fd);
+		} else
+			sprintf(statusBuf, "Willing to manage");
+	}
+	status->length = strlen(statusBuf);
+	status->data = (CARD8Ptr) malloc(status->length);
+	if (!status->data)
+		status->length = 0;
 	else
-	    sprintf (statusBuf, "Willing to manage");
-    }
-    status->length = strlen (statusBuf);
-    status->data = (CARD8Ptr) malloc (status->length);
-    if (!status->data)
-	status->length = 0;
-    else
-	memmove( status->data, statusBuf, status->length);
-    return ret;
+		memmove(status->data, statusBuf, status->length);
+	return ret;
 }
 
-ARRAY8Ptr
-Accept (
-    struct sockaddr *from,
-    int		    fromlen,
-    CARD16	    displayNumber)
+ARRAY8Ptr Accept(struct sockaddr * from, int fromlen, CARD16 displayNumber)
 {
-    return 0;
+	return 0;
 }
 
-int
-SelectConnectionTypeIndex (
-    ARRAY16Ptr	     connectionTypes,
-    ARRAYofARRAY8Ptr connectionAddresses)
+int SelectConnectionTypeIndex(ARRAY16Ptr connectionTypes, ARRAYofARRAY8Ptr connectionAddresses)
 {
-    return 0;
+	return 0;
 }
 
-#endif /* XDMCP */
+#endif							/* XDMCP */

@@ -11,13 +11,12 @@
 #define TCPCONN
 
 #ifdef HAVE_PAM
-#   define USE_PAM
+#define USE_PAM
 #else
-#   ifdef HAVE_SHADOW
-#      define USESHADOW
-#   endif
+#ifdef HAVE_SHADOW
+#define USESHADOW
 #endif
-
+#endif
 
 /* per kde/kdm, too many systems have trouble with secure rpc */
 /* disable secure rpc 'for now' */
@@ -27,4 +26,4 @@
 #define SVR4 1
 #endif
 
-#endif /* __WDMCONFIG_H */
+#endif							/* __WDMCONFIG_H */

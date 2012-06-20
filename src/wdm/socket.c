@@ -50,76 +50,70 @@ from The Open Group.
 
 #include <wdmlib.h>
 
-extern int	xdmcpFd;
-extern int	chooserFd;
+extern int xdmcpFd;
+extern int chooserFd;
 
-extern FD_TYPE	WellKnownSocketsMask;
-extern int	WellKnownSocketsMax;
+extern FD_TYPE WellKnownSocketsMask;
+extern int WellKnownSocketsMax;
 
-void
-CreateWellKnownSockets (void)
+void CreateWellKnownSockets(void)
 {
-    struct sockaddr_in	sock_addr;
-    char *name;
+	struct sockaddr_in sock_addr;
+	char *name;
 
-    if (request_port.i == 0)
-	    return;
-    WDMDebug("creating socket %d\n", request_port.i);
-    xdmcpFd = socket (AF_INET, SOCK_DGRAM, 0);
-    if (xdmcpFd == -1) {
-	WDMError("XDMCP socket creation failed, errno %d\n", errno);
-	return;
-    }
-    name = localHostname ();
-    registerHostname (name, strlen (name));
-    RegisterCloseOnFork (xdmcpFd);
-    /* zero out the entire structure; this avoids 4.4 incompatibilities */
-    bzero ((char *) &sock_addr, sizeof (sock_addr));
+	if (request_port.i == 0)
+		return;
+	WDMDebug("creating socket %d\n", request_port.i);
+	xdmcpFd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (xdmcpFd == -1) {
+		WDMError("XDMCP socket creation failed, errno %d\n", errno);
+		return;
+	}
+	name = localHostname();
+	registerHostname(name, strlen(name));
+	RegisterCloseOnFork(xdmcpFd);
+	/* zero out the entire structure; this avoids 4.4 incompatibilities */
+	bzero((char *)&sock_addr, sizeof(sock_addr));
 #ifdef BSD44SOCKETS
-    sock_addr.sin_len = sizeof(sock_addr);
+	sock_addr.sin_len = sizeof(sock_addr);
 #endif
-    sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port = htons ((short) request_port.i);
-    sock_addr.sin_addr.s_addr = htonl (INADDR_ANY);
-    if (bind (xdmcpFd, (struct sockaddr *)&sock_addr, sizeof (sock_addr)) == -1)
-    {
-	WDMError("error %d binding socket address %d\n", errno, request_port.i);
-	close (xdmcpFd);
-	xdmcpFd = -1;
-	return;
-    }
-    WellKnownSocketsMax = xdmcpFd;
-    FD_SET (xdmcpFd, &WellKnownSocketsMask);
+	sock_addr.sin_family = AF_INET;
+	sock_addr.sin_port = htons((short)request_port.i);
+	sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	if (bind(xdmcpFd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1) {
+		WDMError("error %d binding socket address %d\n", errno, request_port.i);
+		close(xdmcpFd);
+		xdmcpFd = -1;
+		return;
+	}
+	WellKnownSocketsMax = xdmcpFd;
+	FD_SET(xdmcpFd, &WellKnownSocketsMask);
 
-    chooserFd = socket (AF_INET, SOCK_STREAM, 0);
-    WDMDebug("Created chooser socket %d\n", chooserFd);
-    if (chooserFd == -1)
-    {
-	WDMError("chooser socket creation failed, errno %d\n", errno);
-	return;
-    }
-    listen (chooserFd, 5);
-    if (chooserFd > WellKnownSocketsMax)
-	WellKnownSocketsMax = chooserFd;
-    FD_SET (chooserFd, &WellKnownSocketsMask);
+	chooserFd = socket(AF_INET, SOCK_STREAM, 0);
+	WDMDebug("Created chooser socket %d\n", chooserFd);
+	if (chooserFd == -1) {
+		WDMError("chooser socket creation failed, errno %d\n", errno);
+		return;
+	}
+	listen(chooserFd, 5);
+	if (chooserFd > WellKnownSocketsMax)
+		WellKnownSocketsMax = chooserFd;
+	FD_SET(chooserFd, &WellKnownSocketsMask);
 }
 
-int
-GetChooserAddr (
-    char	*addr,
-    int		*lenp)
+int GetChooserAddr(char *addr, int *lenp)
 {
-    struct sockaddr_in	in_addr;
-    int			len;
+	struct sockaddr_in in_addr;
+	int len;
 
-    len = sizeof in_addr;
-    if (getsockname (chooserFd, (struct sockaddr *)&in_addr, (void *)&len) < 0)
-	return -1;
-    WDMDebug("Chooser socket port: %d\n", ntohs(in_addr.sin_port));
-    memmove( addr, (char *) &in_addr, len);
-    *lenp = len;
+	len = sizeof in_addr;
+	if (getsockname(chooserFd, (struct sockaddr *)&in_addr, (void *)&len) < 0)
+		return -1;
+	WDMDebug("Chooser socket port: %d\n", ntohs(in_addr.sin_port));
+	memmove(addr, (char *)&in_addr, len);
+	*lenp = len;
 
-    return 0;
+	return 0;
 }
 
-#endif /* XDMCP */
+#endif							/* XDMCP */

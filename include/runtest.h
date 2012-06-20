@@ -13,5 +13,4 @@
 		return 0; \
 	}
 
-#endif /* __RUNTEST_H */
-
+#endif							/* __RUNTEST_H */

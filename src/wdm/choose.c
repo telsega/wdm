@@ -54,407 +54,334 @@ in this Software without prior written authorization from The Open Group.
 
 #include <wdmlib.h>
 
-static int
-FormatBytes (
-    unsigned char *data,
-    int	    length,
-    char    *buf,
-    int	    buflen)
+static int FormatBytes(unsigned char *data, int length, char *buf, int buflen)
 {
-    int	    i;
-    static char	    HexChars[] = "0123456789abcdef";
+	int i;
+	static char HexChars[] = "0123456789abcdef";
 
-    if (buflen < length * 2 + 1)
-	return 0;
-    for (i = 0; i < length; i++)
-    {
-	*buf++ = HexChars[(data[i] >> 4) & 0xf];
-	*buf++ = HexChars[(data[i]) & 0xf];
-    }
-    *buf++ = '\0';
-    return 1;
+	if (buflen < length * 2 + 1)
+		return 0;
+	for (i = 0; i < length; i++) {
+		*buf++ = HexChars[(data[i] >> 4) & 0xf];
+		*buf++ = HexChars[(data[i]) & 0xf];
+	}
+	*buf++ = '\0';
+	return 1;
 }
 
-static int
-FormatARRAY8 (
-    ARRAY8Ptr	a,
-    char	*buf,
-    int		buflen)
+static int FormatARRAY8(ARRAY8Ptr a, char *buf, int buflen)
 {
-    return FormatBytes (a->data, a->length, buf, buflen);
+	return FormatBytes(a->data, a->length, buf, buflen);
 }
 
 /* Converts an Internet address in ARRAY8 format to a string in
    familiar dotted address notation, e.g., "18.24.0.11"
    Returns 1 if successful, 0 if not.
    */
-static int
-ARRAY8ToDottedDecimal (
-    ARRAY8Ptr	a,
-    char	*buf,
-    int		buflen)
+static int ARRAY8ToDottedDecimal(ARRAY8Ptr a, char *buf, int buflen)
 {
-    if (a->length != 4  ||  buflen < 20)
-	return 0;
-    sprintf(buf, "%d.%d.%d.%d",
-	    a->data[0], a->data[1], a->data[2], a->data[3]);
-    return 1;
+	if (a->length != 4 || buflen < 20)
+		return 0;
+	sprintf(buf, "%d.%d.%d.%d", a->data[0], a->data[1], a->data[2], a->data[3]);
+	return 1;
 }
 
 typedef struct _IndirectUsers {
-    struct _IndirectUsers   *next;
-    ARRAY8	client;
-    CARD16	connectionType;
+	struct _IndirectUsers *next;
+	ARRAY8 client;
+	CARD16 connectionType;
 } IndirectUsersRec, *IndirectUsersPtr;
 
-static IndirectUsersPtr	indirectUsers;
+static IndirectUsersPtr indirectUsers;
 
-int
-RememberIndirectClient (
-    ARRAY8Ptr	clientAddress,
-    CARD16	connectionType)
+int RememberIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
-    IndirectUsersPtr	i;
+	IndirectUsersPtr i;
 
-    for (i = indirectUsers; i; i = i->next)
-	if (XdmcpARRAY8Equal (clientAddress, &i->client) &&
-	    connectionType == i->connectionType)
-	    return 1;
-    i = (IndirectUsersPtr) malloc (sizeof (IndirectUsersRec));
-    if (!XdmcpCopyARRAY8 (clientAddress, &i->client))
-    {
-	free ((char *) i);
-	return 0;
-    }
-    i->connectionType = connectionType;
-    i->next = indirectUsers;
-    indirectUsers = i;
-    return 1;
-}
-
-void
-ForgetIndirectClient (
-    ARRAY8Ptr	clientAddress,
-    CARD16	connectionType)
-{
-    IndirectUsersPtr	i, prev;
-
-    prev = 0;
-    for (i = indirectUsers; i; i = i->next)
-    {
-	if (XdmcpARRAY8Equal (clientAddress, &i->client) &&
-	    connectionType == i->connectionType)
-	{
-	    if (prev)
-		prev->next = i->next;
-	    else
-		indirectUsers = i->next;
-	    XdmcpDisposeARRAY8 (&i->client);
-	    free ((char *) i);
-	    break;
+	for (i = indirectUsers; i; i = i->next)
+		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType)
+			return 1;
+	i = (IndirectUsersPtr) malloc(sizeof(IndirectUsersRec));
+	if (!XdmcpCopyARRAY8(clientAddress, &i->client)) {
+		free((char *)i);
+		return 0;
 	}
-	prev = i;
-    }
+	i->connectionType = connectionType;
+	i->next = indirectUsers;
+	indirectUsers = i;
+	return 1;
 }
 
-int
-IsIndirectClient (
-    ARRAY8Ptr	clientAddress,
-    CARD16	connectionType)
+void ForgetIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
-    IndirectUsersPtr	i;
+	IndirectUsersPtr i, prev;
 
-    for (i = indirectUsers; i; i = i->next)
-	if (XdmcpARRAY8Equal (clientAddress, &i->client) &&
-	    connectionType == i->connectionType)
-	    return 1;
-    return 0;
-}
-
-static int
-FormatChooserArgument (char *buf, int len)
-{
-    unsigned char   addr_buf[1024];
-    int		    addr_len = sizeof (addr_buf);
-    unsigned char   result_buf[1024];
-    int		    result_len = 0;
-    int		    netfamily;
-
-    if (GetChooserAddr ((char *)addr_buf, &addr_len) == -1)
-    {
-	WDMError("Cannot get return address for chooser socket\n");
-	WDMDebug("Cannot get chooser socket address\n");
-	return 0;
-    }
-    netfamily = NetaddrFamily((XdmcpNetaddr)addr_buf);
-    switch (netfamily) {
-    case AF_INET:
-	{
-	    char *port;
-	    int portlen;
-	    ARRAY8Ptr localAddress;
-
-	    port = NetaddrPort((XdmcpNetaddr)addr_buf, &portlen);
-	    result_buf[0] = netfamily >> 8;
-	    result_buf[1] = netfamily & 0xFF;
-	    result_buf[2] = port[0];
-	    result_buf[3] = port[1];
-	    localAddress = getLocalAddress ();
-	    memmove( (char *)result_buf+4, (char *)localAddress->data, 4);
-	    result_len = 8;
+	prev = 0;
+	for (i = indirectUsers; i; i = i->next) {
+		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType) {
+			if (prev)
+				prev->next = i->next;
+			else
+				indirectUsers = i->next;
+			XdmcpDisposeARRAY8(&i->client);
+			free((char *)i);
+			break;
+		}
+		prev = i;
 	}
-	break;
-    default:
-	WDMDebug("Chooser family %d isn't known\n", netfamily);
-	return 0;
-    }
+}
 
-    return FormatBytes (result_buf, result_len, buf, len);
+int IsIndirectClient(ARRAY8Ptr clientAddress, CARD16 connectionType)
+{
+	IndirectUsersPtr i;
+
+	for (i = indirectUsers; i; i = i->next)
+		if (XdmcpARRAY8Equal(clientAddress, &i->client) && connectionType == i->connectionType)
+			return 1;
+	return 0;
+}
+
+static int FormatChooserArgument(char *buf, int len)
+{
+	unsigned char addr_buf[1024];
+	int addr_len = sizeof(addr_buf);
+	unsigned char result_buf[1024];
+	int result_len = 0;
+	int netfamily;
+
+	if (GetChooserAddr((char *)addr_buf, &addr_len) == -1) {
+		WDMError("Cannot get return address for chooser socket\n");
+		WDMDebug("Cannot get chooser socket address\n");
+		return 0;
+	}
+	netfamily = NetaddrFamily((XdmcpNetaddr) addr_buf);
+	switch (netfamily) {
+	case AF_INET:
+		{
+			char *port;
+			int portlen;
+			ARRAY8Ptr localAddress;
+
+			port = NetaddrPort((XdmcpNetaddr) addr_buf, &portlen);
+			result_buf[0] = netfamily >> 8;
+			result_buf[1] = netfamily & 0xFF;
+			result_buf[2] = port[0];
+			result_buf[3] = port[1];
+			localAddress = getLocalAddress();
+			memmove((char *)result_buf + 4, (char *)localAddress->data, 4);
+			result_len = 8;
+		}
+		break;
+	default:
+		WDMDebug("Chooser family %d isn't known\n", netfamily);
+		return 0;
+	}
+
+	return FormatBytes(result_buf, result_len, buf, len);
 }
 
 typedef struct _Choices {
-    struct _Choices *next;
-    ARRAY8	    client;
-    CARD16	    connectionType;
-    ARRAY8	    choice;
-    Time_t	    time;
+	struct _Choices *next;
+	ARRAY8 client;
+	CARD16 connectionType;
+	ARRAY8 choice;
+	Time_t time;
 } ChoiceRec, *ChoicePtr;
 
-static ChoicePtr   choices;
+static ChoicePtr choices;
 
-ARRAY8Ptr
-IndirectChoice (
-    ARRAY8Ptr	clientAddress,
-    CARD16	connectionType)
+ARRAY8Ptr IndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType)
 {
-    ChoicePtr	c, next, prev;
-    Time_t	now;
+	ChoicePtr c, next, prev;
+	Time_t now;
 
-    now = time ((Time_t*)0);
-    prev = 0;
-    for (c = choices; c; c = next)
-    {
-	next = c->next;
-	WDMDebug("Choice checking timeout: %ld >? %d\n",
-	    (long)(now - c->time), choiceTimeout.i);
-	if (now - c->time > (Time_t)choiceTimeout.i)
-	{
-	    WDMDebug("Timeout choice %ld > %d\n",
-		(long)(now - c->time), choiceTimeout.i);
-	    if (prev)
-		prev->next = next;
-	    else
-		choices = next;
-	    XdmcpDisposeARRAY8 (&c->client);
-	    XdmcpDisposeARRAY8 (&c->choice);
-	    free ((char *) c);
+	now = time((Time_t *) 0);
+	prev = 0;
+	for (c = choices; c; c = next) {
+		next = c->next;
+		WDMDebug("Choice checking timeout: %ld >? %d\n", (long)(now - c->time), choiceTimeout.i);
+		if (now - c->time > (Time_t) choiceTimeout.i) {
+			WDMDebug("Timeout choice %ld > %d\n", (long)(now - c->time), choiceTimeout.i);
+			if (prev)
+				prev->next = next;
+			else
+				choices = next;
+			XdmcpDisposeARRAY8(&c->client);
+			XdmcpDisposeARRAY8(&c->choice);
+			free((char *)c);
+		} else {
+			if (XdmcpARRAY8Equal(clientAddress, &c->client) && connectionType == c->connectionType)
+				return &c->choice;
+			prev = c;
+		}
 	}
-	else
-	{
-	    if (XdmcpARRAY8Equal (clientAddress, &c->client) &&
-	    	connectionType == c->connectionType)
-	    	return &c->choice;
-	    prev = c;
-	}
-    }
-    return 0;
+	return 0;
 }
 
-static int
-RegisterIndirectChoice (
-    ARRAY8Ptr	clientAddress,
-    CARD16      connectionType,
-    ARRAY8Ptr	choice)
+static int RegisterIndirectChoice(ARRAY8Ptr clientAddress, CARD16 connectionType, ARRAY8Ptr choice)
 {
-    ChoicePtr	c;
-    int		insert;
-    int		found = 0;
+	ChoicePtr c;
+	int insert;
+	int found = 0;
 
-    WDMDebug("Got indirect choice back\n");
-    for (c = choices; c; c = c->next) {
-	if (XdmcpARRAY8Equal (clientAddress, &c->client) &&
-	    connectionType == c->connectionType) {
-	    found = 1;
-	    break;
+	WDMDebug("Got indirect choice back\n");
+	for (c = choices; c; c = c->next) {
+		if (XdmcpARRAY8Equal(clientAddress, &c->client) && connectionType == c->connectionType) {
+			found = 1;
+			break;
+		}
 	}
-    }
 #if 0
-    if (!found)
-	return 0;
+	if (!found)
+		return 0;
 #endif
 
-    insert = 0;
-    if (!c)
-    {
-	c = (ChoicePtr) malloc (sizeof (ChoiceRec));
-	insert = 1;
-	if (!c)
-	    return 0;
-	c->connectionType = connectionType;
-    	if (!XdmcpCopyARRAY8 (clientAddress, &c->client))
-    	{
-	    free ((char *) c);
-	    return 0;
-    	}
-    }
-    else
-    {
-	XdmcpDisposeARRAY8 (&c->choice);
-    }
-    if (!XdmcpCopyARRAY8 (choice, &c->choice))
-    {
-	XdmcpDisposeARRAY8 (&c->client);
-	free ((char *) c);
-	return 0;
-    }
-    if (insert)
-    {
-	c->next = choices;
-	choices = c;
-    }
-    c->time = time (0);
-    return 1;
+	insert = 0;
+	if (!c) {
+		c = (ChoicePtr) malloc(sizeof(ChoiceRec));
+		insert = 1;
+		if (!c)
+			return 0;
+		c->connectionType = connectionType;
+		if (!XdmcpCopyARRAY8(clientAddress, &c->client)) {
+			free((char *)c);
+			return 0;
+		}
+	} else {
+		XdmcpDisposeARRAY8(&c->choice);
+	}
+	if (!XdmcpCopyARRAY8(choice, &c->choice)) {
+		XdmcpDisposeARRAY8(&c->client);
+		free((char *)c);
+		return 0;
+	}
+	if (insert) {
+		c->next = choices;
+		choices = c;
+	}
+	c->time = time(0);
+	return 1;
 }
 
 #ifdef notdef
-static
-RemoveIndirectChoice (clientAddress, connectionType)
-    ARRAY8Ptr	clientAddress;
-    CARD16	connectionType;
+static RemoveIndirectChoice(clientAddress, connectionType)
+ARRAY8Ptr clientAddress;
+CARD16 connectionType;
 {
-    ChoicePtr	c, prev;
+	ChoicePtr c, prev;
 
-    prev = 0;
-    for (c = choices; c; c = c->next)
-    {
-	if (XdmcpARRAY8Equal (clientAddress, &c->client) &&
-	    connectionType == c->connectionType)
-	{
-	    if (prev)
-		prev->next = c->next;
-	    else
-		choices = c->next;
-	    XdmcpDisposeARRAY8 (&c->client);
-	    XdmcpDisposeARRAY8 (&c->choice);
-	    free ((char *) c);
-	    return;
-	}
-	prev = c;
-    }
-}
-#endif
-
-static void
-AddChooserHost (
-    CARD16	connectionType,
-    ARRAY8Ptr	addr,
-    char	*closure)
-{
-    char	***argp;
-    char	hostbuf[1024];
-
-    argp = (char ***) closure;
-    if (addr->length == strlen ("BROADCAST") &&
-	!strncmp ((char *)addr->data, "BROADCAST", addr->length))
-    {
-	*argp = parseArgs (*argp, "BROADCAST");
-    }
-    else if (ARRAY8ToDottedDecimal (addr, hostbuf, sizeof (hostbuf)))
-    {
-	*argp = parseArgs (*argp, hostbuf);
-    }
-}
-
-void
-ProcessChooserSocket (int fd)
-{
-    int client_fd;
-    char	buf[1024];
-    int		len;
-    XdmcpBuffer	buffer;
-    ARRAY8	clientAddress;
-    CARD16	connectionType;
-    ARRAY8	choice;
-
-    WDMDebug("Process chooser socket\n");
-    len = sizeof (buf);
-    client_fd = accept (fd, (struct sockaddr *)buf, (void *)&len);
-    if (client_fd == -1)
-    {
-	WDMError("Cannot accept chooser connection\n");
-	return;
-    }
-    WDMDebug("Accepted %d\n", client_fd);
-    
-    len = read (client_fd, buf, sizeof (buf));
-    WDMDebug("Read returns %d\n", len);
-    if (len > 0)
-    {
-    	buffer.data = (BYTE *) buf;
-    	buffer.size = sizeof (buf);
-    	buffer.count = len;
-    	buffer.pointer = 0;
-	clientAddress.data = 0;
-	clientAddress.length = 0;
-	choice.data = 0;
-	choice.length = 0;
-	if (XdmcpReadARRAY8 (&buffer, &clientAddress)) {
-	    if (XdmcpReadCARD16 (&buffer, &connectionType)) {
-		if (XdmcpReadARRAY8 (&buffer, &choice)) {
-		    WDMDebug("Read from chooser succesfully\n");
-		    RegisterIndirectChoice (&clientAddress, connectionType, &choice);
-		    XdmcpDisposeARRAY8 (&choice);
-		} else {
-		    WDMError("Invalid choice response length %d\n", len);
+	prev = 0;
+	for (c = choices; c; c = c->next) {
+		if (XdmcpARRAY8Equal(clientAddress, &c->client) && connectionType == c->connectionType) {
+			if (prev)
+				prev->next = c->next;
+			else
+				choices = c->next;
+			XdmcpDisposeARRAY8(&c->client);
+			XdmcpDisposeARRAY8(&c->choice);
+			free((char *)c);
+			return;
 		}
-	    } else {
-		WDMError("Invalid choice response length %d\n", len);
-	    }
-	    XdmcpDisposeARRAY8 (&clientAddress);
-	} else {
-	    WDMError("Invalid choice response length %d\n", len);
+		prev = c;
 	}
-    }
-    else
-    {
-	WDMError("Choice response read error: %s\n", strerror(errno));
-    }
-
-    close (client_fd);
 }
-
-void
-RunChooser (struct display *d)
-{
-    char    **args;
-    char    buf[1024];
-    char    **env;
-
-    WDMDebug("RunChooser %s\n", d->name);
-#ifndef HAS_SETPROCTITLE
-    SetTitle (d->name, "chooser", (char *) 0);
-#else
-    setproctitle("chooser %s", d->name);
 #endif
-    LoadXloginResources (d);
-    args = parseArgs ((char **) 0, d->chooser);
-    strcpy (buf, "-xdmaddress ");
-    if (FormatChooserArgument (buf + strlen (buf), sizeof (buf) - strlen (buf)))
-	args = parseArgs (args, buf);
-    strcpy (buf, "-clientaddress ");
-    if (FormatARRAY8 (&d->clientAddr, buf + strlen (buf), sizeof (buf) - strlen (buf)))
-	args = parseArgs (args, buf);
-    sprintf (buf, "-connectionType %d", d->connectionType);
-    args = parseArgs (args, buf);
-    ForEachChooserHost (&d->clientAddr, d->connectionType, AddChooserHost,
-			(char *) &args);
-    env = systemEnv (d, (char *) 0, (char *) 0);
-    WDMDebug("Running %s\n", args[0]);
-    execute (args, env);
-    WDMDebug("Couldn't run %s\n", args[0]);
-    WDMError("Cannot execute %s\n", args[0]);
-    exit (REMANAGE_DISPLAY);
+
+static void AddChooserHost(CARD16 connectionType, ARRAY8Ptr addr, char *closure)
+{
+	char ***argp;
+	char hostbuf[1024];
+
+	argp = (char ***)closure;
+	if (addr->length == strlen("BROADCAST") && !strncmp((char *)addr->data, "BROADCAST", addr->length)) {
+		*argp = parseArgs(*argp, "BROADCAST");
+	} else if (ARRAY8ToDottedDecimal(addr, hostbuf, sizeof(hostbuf))) {
+		*argp = parseArgs(*argp, hostbuf);
+	}
 }
 
-#endif /* XDMCP */
+void ProcessChooserSocket(int fd)
+{
+	int client_fd;
+	char buf[1024];
+	int len;
+	XdmcpBuffer buffer;
+	ARRAY8 clientAddress;
+	CARD16 connectionType;
+	ARRAY8 choice;
 
+	WDMDebug("Process chooser socket\n");
+	len = sizeof(buf);
+	client_fd = accept(fd, (struct sockaddr *)buf, (void *)&len);
+	if (client_fd == -1) {
+		WDMError("Cannot accept chooser connection\n");
+		return;
+	}
+	WDMDebug("Accepted %d\n", client_fd);
+
+	len = read(client_fd, buf, sizeof(buf));
+	WDMDebug("Read returns %d\n", len);
+	if (len > 0) {
+		buffer.data = (BYTE *) buf;
+		buffer.size = sizeof(buf);
+		buffer.count = len;
+		buffer.pointer = 0;
+		clientAddress.data = 0;
+		clientAddress.length = 0;
+		choice.data = 0;
+		choice.length = 0;
+		if (XdmcpReadARRAY8(&buffer, &clientAddress)) {
+			if (XdmcpReadCARD16(&buffer, &connectionType)) {
+				if (XdmcpReadARRAY8(&buffer, &choice)) {
+					WDMDebug("Read from chooser succesfully\n");
+					RegisterIndirectChoice(&clientAddress, connectionType, &choice);
+					XdmcpDisposeARRAY8(&choice);
+				} else {
+					WDMError("Invalid choice response length %d\n", len);
+				}
+			} else {
+				WDMError("Invalid choice response length %d\n", len);
+			}
+			XdmcpDisposeARRAY8(&clientAddress);
+		} else {
+			WDMError("Invalid choice response length %d\n", len);
+		}
+	} else {
+		WDMError("Choice response read error: %s\n", strerror(errno));
+	}
+
+	close(client_fd);
+}
+
+void RunChooser(struct display *d)
+{
+	char **args;
+	char buf[1024];
+	char **env;
+
+	WDMDebug("RunChooser %s\n", d->name);
+#ifndef HAS_SETPROCTITLE
+	SetTitle(d->name, "chooser", (char *)0);
+#else
+	setproctitle("chooser %s", d->name);
+#endif
+	LoadXloginResources(d);
+	args = parseArgs((char **)0, d->chooser);
+	strcpy(buf, "-xdmaddress ");
+	if (FormatChooserArgument(buf + strlen(buf), sizeof(buf) - strlen(buf)))
+		args = parseArgs(args, buf);
+	strcpy(buf, "-clientaddress ");
+	if (FormatARRAY8(&d->clientAddr, buf + strlen(buf), sizeof(buf) - strlen(buf)))
+		args = parseArgs(args, buf);
+	sprintf(buf, "-connectionType %d", d->connectionType);
+	args = parseArgs(args, buf);
+	ForEachChooserHost(&d->clientAddr, d->connectionType, AddChooserHost, (char *)&args);
+	env = systemEnv(d, (char *)0, (char *)0);
+	WDMDebug("Running %s\n", args[0]);
+	execute(args, env);
+	WDMDebug("Couldn't run %s\n", args[0]);
+	WDMError("Cannot execute %s\n", args[0]);
+	exit(REMANAGE_DISPLAY);
+}
+
+#endif							/* XDMCP */

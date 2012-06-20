@@ -20,7 +20,6 @@
  * TestLogin.c: simple test for wdmLogin program
  */
 
-
 /*
  * This is a simple test program to test the interface to
  * the external Login program rather than doing the whole
@@ -91,74 +90,76 @@ extern char **environ;
 
 /* some testing data */
 
-static char     LoginName[] = "gene";  /* any other user is not defined */
-static char     LoginPswd[] = "Testing";
+static char LoginName[] = "gene";	/* any other user is not defined */
+static char LoginPswd[] = "Testing";
 
-static char     *ExternalLogin = NULL;
-static char     *ExternalName  = NULL;
+static char *ExternalLogin = NULL;
+static char *ExternalName = NULL;
 
 /* this needs to be defined for the read routes */
 
 void read_error(char *msg)
 {
-    WDMPanic("Pipe I/O Testing error: %s\n", msg);
+	WDMPanic("Pipe I/O Testing error: %s\n", msg);
 }
 
 /* This file is Copyright 1998 Tom Rothamel. It's under the Gnu Public   *
  * license, see the file COPYING for details.                            */
 
+void guaranteed_read(int fd, char *buf, size_t count)
+{
+	int bytes_read;
 
-void guaranteed_read(int fd, char *buf, size_t count) {
-        int bytes_read;
+	if (count == 0) {
+		return;
+	}
 
-        if (count == 0) {
-                return;
-        }
+	while ((bytes_read = read(fd, buf, count)) > 0) {
+		count -= bytes_read;
+		buf += bytes_read;
 
+		if (count == 0) {
+			return;
+		}
+	}
 
-        while((bytes_read = read(fd, buf, count))>0) {
-                count -= bytes_read;
-                buf += bytes_read;
-
-                if (count == 0) {
-                        return;
-                }
-        }
-
-        read_error("guaranteed_read failed.");
+	read_error("guaranteed_read failed.");
 }
 
-unsigned char readuc(int fd) {
-        unsigned char uc;
+unsigned char readuc(int fd)
+{
+	unsigned char uc;
 
-        guaranteed_read(fd, (char *)&uc, sizeof(unsigned char));
-        return uc;
+	guaranteed_read(fd, (char *)&uc, sizeof(unsigned char));
+	return uc;
 }
 
-char *readstring(int fd) {
-        int len;
-        char *buf;
+char *readstring(int fd)
+{
+	int len;
+	char *buf;
 
-        len = (int) readuc(fd);
-        buf = malloc(len + 1);
-        if(!buf) read_error("malloc of string failed.");
-        guaranteed_read(fd, buf, len);
-        buf[len] = 0;
+	len = (int)readuc(fd);
+	buf = malloc(len + 1);
+	if (!buf)
+		read_error("malloc of string failed.");
+	guaranteed_read(fd, buf, len);
+	buf[len] = 0;
 
-        return buf;
+	return buf;
 }
 
 /* the simple test routine */
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-        int  pid, filedescriptor[2], extcode=0, notdone = 0, i;
-        char *username, *userpswd, *xsession=NULL, *exitstr=NULL;
+	int pid, filedescriptor[2], extcode = 0, notdone = 0, i;
+	char *username, *userpswd, *xsession = NULL, *exitstr = NULL;
 	char **nargv;
 
 #if 0
 	FILE *f;
-	if((f = fopen("TestLogin.log", "w")) == NULL)
+	if ((f = fopen("TestLogin.log", "w")) == NULL)
 		WDMPanic("cannot open log file");
 	WDMLogStream(f);
 #endif
@@ -171,115 +172,113 @@ int main (int argc, char *argv[])
 	WDMLogLevel(WDM_LEVEL_DEBUG);
 #endif
 
-        if (argc < 2)
+	if (argc < 2)
 		WDMPanic("oops -- need pgm to exec as first arg\n");
 
-        ExternalLogin = argv[1];
-        ExternalName  = strrchr(ExternalLogin,'/');
-        if (ExternalName==NULL)
-            ExternalName = ExternalLogin;
-        else
-            ExternalName++;
-        WDMDebug("External Name: %s\n",ExternalName);
-        WDMInfo("Testing: %s\n",ExternalLogin);
+	ExternalLogin = argv[1];
+	ExternalName = strrchr(ExternalLogin, '/');
+	if (ExternalName == NULL)
+		ExternalName = ExternalLogin;
+	else
+		ExternalName++;
+	WDMDebug("External Name: %s\n", ExternalName);
+	WDMInfo("Testing: %s\n", ExternalLogin);
 
-        pipe(filedescriptor);
+	pipe(filedescriptor);
 
-        pid = fork();
+	pid = fork();
 
-        switch(pid) {
-                case -1:
-                        WDMPanic("Cannot fork for external process\n");
-                break;
-                case 0: /* this is the child process */
-                        close(filedescriptor[0]);
-                        fcntl(filedescriptor[1], F_SETFD, 0); /*unset close-on-exec */
+	switch (pid) {
+	case -1:
+		WDMPanic("Cannot fork for external process\n");
+		break;
+	case 0:					/* this is the child process */
+		close(filedescriptor[0]);
+		fcntl(filedescriptor[1], F_SETFD, 0);	/*unset close-on-exec */
 
-			nargv = wmalloc(sizeof(char*) * (argc + 1));
-			memcpy(nargv, argv + 1, sizeof(char*) * (argc - 1));
-			nargv[argc - 1] = wmalloc(25);
-			sprintf(nargv[argc - 1], "-f%i", filedescriptor[1]);
-			nargv[argc] = NULL;
+		nargv = wmalloc(sizeof(char *) * (argc + 1));
+		memcpy(nargv, argv + 1, sizeof(char *) * (argc - 1));
+		nargv[argc - 1] = wmalloc(25);
+		sprintf(nargv[argc - 1], "-f%i", filedescriptor[1]);
+		nargv[argc] = NULL;
 
-                        execve(ExternalLogin, nargv, environ);
-                        WDMPanic("Cannot exec %s\n", ExternalLogin);
-                break;
-        }
-        WDMDebug("Continuing, child=%i\n",pid);
-        close (filedescriptor[1]);  /* Just need reading on our side */
+		execve(ExternalLogin, nargv, environ);
+		WDMPanic("Cannot exec %s\n", ExternalLogin);
+		break;
+	}
+	WDMDebug("Continuing, child=%i\n", pid);
+	close(filedescriptor[1]);	/* Just need reading on our side */
 
-        while (forever) {
-            username = readstring(filedescriptor[0]);
-            WDMInfo("Got username: %s\n", username);
-            userpswd = readstring(filedescriptor[0]);
-            WDMInfo("Got userpswd: %s\n", userpswd);
+	while (forever) {
+		username = readstring(filedescriptor[0]);
+		WDMInfo("Got username: %s\n", username);
+		userpswd = readstring(filedescriptor[0]);
+		WDMInfo("Got userpswd: %s\n", userpswd);
 
-            notdone = 1;
-            while (notdone) {
-                i = readuc(filedescriptor[0]);
-                switch (i) {
-                        case 0:
-                                notdone=0;
-                        break;
-                        case 1:
-                                if (xsession)
-                                    free(xsession);
-                                xsession = readstring(filedescriptor[0]);
-                                extcode = 1;
-                        break;
-                        case 2:
-                                if (exitstr)
-                                    free(exitstr);
-                                exitstr = readstring(filedescriptor[0]);
-                                WDMInfo("2=reboot: %s\n", exitstr);
-                                extcode = 2;
-                        break;
-                        case 3:
-                                if (exitstr)
-                                    free(exitstr);
-                                exitstr = readstring(filedescriptor[0]);
-                                WDMInfo("3=halt: %s\n", exitstr);
-                                extcode = 3;
-                        break;
-                        case 4:
-                                if (exitstr)
-                                    free(exitstr);
-                                exitstr = readstring(filedescriptor[0]);
-                                WDMInfo("4=exit: %s\n", exitstr);
-                                extcode = 4;
-                        break;
-                        default:
-                                WDMWarning("bad extension code %i\n",i);
-                                /* keep reading here, greet should abort */
-                        break;
-                }
-            }
-            if (xsession) {
-                WDMInfo("xsession=%s\n", xsession);
-                free(xsession);
-                xsession=NULL;
-            }
-            if (exitstr) {
-                WDMInfo("exitstr=%s\n", exitstr);
-                free(exitstr);
-                exitstr=NULL;
-            }
-            /* testing insists on a good username/pswd to terminate */
-            if (((strcmp(username,LoginName)==0) &&
-                 (strcmp(userpswd,LoginPswd)==0)) ||
-                (extcode==4)) {
-                    WDMInfo("success! Now terminate and exit\n");
-                    wusleep(1000000);
-                    kill(pid, SIGTERM);
-                    break; /* get out of forever loop */
-            }
-            WDMError(" bad name or password; go around again\n");
-            wusleep(1000000);
-            kill(pid, SIGUSR1);
+		notdone = 1;
+		while (notdone) {
+			i = readuc(filedescriptor[0]);
+			switch (i) {
+			case 0:
+				notdone = 0;
+				break;
+			case 1:
+				if (xsession)
+					free(xsession);
+				xsession = readstring(filedescriptor[0]);
+				extcode = 1;
+				break;
+			case 2:
+				if (exitstr)
+					free(exitstr);
+				exitstr = readstring(filedescriptor[0]);
+				WDMInfo("2=reboot: %s\n", exitstr);
+				extcode = 2;
+				break;
+			case 3:
+				if (exitstr)
+					free(exitstr);
+				exitstr = readstring(filedescriptor[0]);
+				WDMInfo("3=halt: %s\n", exitstr);
+				extcode = 3;
+				break;
+			case 4:
+				if (exitstr)
+					free(exitstr);
+				exitstr = readstring(filedescriptor[0]);
+				WDMInfo("4=exit: %s\n", exitstr);
+				extcode = 4;
+				break;
+			default:
+				WDMWarning("bad extension code %i\n", i);
+				/* keep reading here, greet should abort */
+				break;
+			}
+		}
+		if (xsession) {
+			WDMInfo("xsession=%s\n", xsession);
+			free(xsession);
+			xsession = NULL;
+		}
+		if (exitstr) {
+			WDMInfo("exitstr=%s\n", exitstr);
+			free(exitstr);
+			exitstr = NULL;
+		}
+		/* testing insists on a good username/pswd to terminate */
+		if (((strcmp(username, LoginName) == 0) && (strcmp(userpswd, LoginPswd) == 0)) || (extcode == 4)) {
+			WDMInfo("success! Now terminate and exit\n");
+			wusleep(1000000);
+			kill(pid, SIGTERM);
+			break;				/* get out of forever loop */
+		}
+		WDMError(" bad name or password; go around again\n");
+		wusleep(1000000);
+		kill(pid, SIGUSR1);
 
-            free(username);
-            free(userpswd);
-        }
-        WDMInfo("All Done, exiting\n");
-        return 0;
+		free(username);
+		free(userpswd);
+	}
+	WDMInfo("All Done, exiting\n");
+	return 0;
 }

@@ -42,13 +42,11 @@ static pid_t childpid = 0;
  *
  * Returned value is pointer to string that is left unterminated with '\n'
  */
-char *
-WDMLogMessages(int level, char *buffer, int n)
+char *WDMLogMessages(int level, char *buffer, int n)
 {
 	char *tmpmsg, *pos;
 
-	while((pos = memchr(buffer, '\n', n)) != NULL)
-	{
+	while ((pos = memchr(buffer, '\n', n)) != NULL) {
 		tmpmsg = wmalloc(pos - buffer + 2);
 		strncpy(tmpmsg, buffer, pos - buffer + 1);
 		tmpmsg[pos - buffer + 1] = '\0';
@@ -62,8 +60,7 @@ WDMLogMessages(int level, char *buffer, int n)
 	return buffer;
 }
 
-void
-WDMBufferedLogMessages(int level, char *buffer, int n)
+void WDMBufferedLogMessages(int level, char *buffer, int n)
 {
 	static char *old = NULL;
 	static size_t oldn = 0;
@@ -80,8 +77,7 @@ WDMBufferedLogMessages(int level, char *buffer, int n)
 	memmove(old, rest, oldn);
 }
 
-int
-WDMRedirectFileToLog(int level, pid_t pid, int fd)
+int WDMRedirectFileToLog(int level, pid_t pid, int fd)
 {
 	fd_set set;
 	int status;
@@ -90,16 +86,14 @@ WDMRedirectFileToLog(int level, pid_t pid, int fd)
 	int n;
 
 	WDMDebug("logger started\n");
-	while(waitpid(pid, &status, WNOHANG) == 0)
-	{
+	while (waitpid(pid, &status, WNOHANG) == 0) {
 		FD_ZERO(&set);
 		FD_SET(fd, &set);
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
-		if(select(fd + 1, &set, NULL, NULL, &tv) > 0)
-		{
+		if (select(fd + 1, &set, NULL, NULL, &tv) > 0) {
 			n = read(fd, buf, sizeof(buf));
-			if(n == -1)
+			if (n == -1)
 				WDMError("error reading form pipe(stderr)\n");
 
 			WDMBufferedLogMessages(level, buf, n);
@@ -119,34 +113,27 @@ void WDMRedirectSignals(int n)
 #endif
 }
 
-void
-WDMRedirectStderr(int level)
+void WDMRedirectStderr(int level)
 {
 	int errpipe[2];
 	int exitstatus;
 
-	if(pipe(errpipe) == -1)
-		WDMError("cannot create pipe. "
-				"all stderr messages will go to stderr\n");
+	if (pipe(errpipe) == -1)
+		WDMError("cannot create pipe. " "all stderr messages will go to stderr\n");
 
 	childpid = fork();
-	if(childpid == -1)
-	{
-		WDMError("fork failed. "
-				"all stderr messages will go to stderr\n");
+	if (childpid == -1) {
+		WDMError("fork failed. " "all stderr messages will go to stderr\n");
 		close(errpipe[0]);
 		close(errpipe[1]);
-	}
-	else if(childpid != 0)
-	{
+	} else if (childpid != 0) {
 		/* parent, will read all messages from stderr and
 		 * redirect it to log */
 		Signal(SIGTERM, WDMRedirectSignals);
 		Signal(SIGINT, WDMRedirectSignals);
 		Signal(SIGHUP, WDMRedirectSignals);
 		close(errpipe[1]);
-		exitstatus = WDMRedirectFileToLog(WDM_LEVEL_ERROR,
-							childpid, errpipe[0]);
+		exitstatus = WDMRedirectFileToLog(WDM_LEVEL_ERROR, childpid, errpipe[0]);
 		close(errpipe[0]);
 		exit(exitstatus);
 	}
@@ -157,4 +144,3 @@ WDMRedirectStderr(int level)
 	RegisterCloseOnFork(errpipe[1]);
 	dup2(errpipe[1], 2);
 }
-

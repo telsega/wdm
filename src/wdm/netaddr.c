@@ -33,7 +33,7 @@ from The Open Group.
 
 #include <dm.h>
 
-#include <X11/X.h>		/* FamilyInternet, etc. */
+#include <X11/X.h>				/* FamilyInternet, etc. */
 
 #ifdef XDMCP
 
@@ -42,9 +42,9 @@ from The Open Group.
 #ifdef UNIXCONN
 #ifndef X_NO_SYS_UN
 #ifndef Lynx
-#include <sys/un.h>		/* struct sockaddr_un */
+#include <sys/un.h>				/* struct sockaddr_un */
 #else
-#include <un.h>			/* struct sockaddr_un */
+#include <un.h>					/* struct sockaddr_un */
 #endif
 #endif
 #endif
@@ -56,117 +56,106 @@ from The Open Group.
 
 int NetaddrFamily(XdmcpNetaddr netaddrp)
 {
-    return ((struct sockaddr *)netaddrp)->sa_family;
+	return ((struct sockaddr *)netaddrp)->sa_family;
 }
-
 
 /* given an XdmcpNetaddr, returns a pointer to the TCP/UDP port used
    and sets *lenp to the length of the address
    or 0 if not using TCP or UDP. */
 
-char * NetaddrPort(XdmcpNetaddr netaddrp, int *lenp)
+char *NetaddrPort(XdmcpNetaddr netaddrp, int *lenp)
 {
-    switch (NetaddrFamily(netaddrp))
-    {
-    case AF_INET:
-	*lenp = 2;
-	return (char *)&(((struct sockaddr_in *)netaddrp)->sin_port);
-    default:
-	*lenp = 0;
-	return NULL;
-    }
+	switch (NetaddrFamily(netaddrp)) {
+	case AF_INET:
+		*lenp = 2;
+		return (char *)&(((struct sockaddr_in *)netaddrp)->sin_port);
+	default:
+		*lenp = 0;
+		return NULL;
+	}
 }
-
 
 /* given an XdmcpNetaddr, returns a pointer to the network address
    and sets *lenp to the length of the address */
 
-char * NetaddrAddress(XdmcpNetaddr netaddrp, int *lenp)
+char *NetaddrAddress(XdmcpNetaddr netaddrp, int *lenp)
 {
-    switch (NetaddrFamily(netaddrp)) {
+	switch (NetaddrFamily(netaddrp)) {
 #ifdef UNIXCONN
-    case AF_UNIX:
-	*lenp = strlen(((struct sockaddr_un *)netaddrp)->sun_path);
-        return (char *) (((struct sockaddr_un *)netaddrp)->sun_path);
+	case AF_UNIX:
+		*lenp = strlen(((struct sockaddr_un *)netaddrp)->sun_path);
+		return (char *)(((struct sockaddr_un *)netaddrp)->sun_path);
 #endif
 #ifdef TCPCONN
-    case AF_INET:
-        *lenp = sizeof (struct in_addr);
-        return (char *) &(((struct sockaddr_in *)netaddrp)->sin_addr);
+	case AF_INET:
+		*lenp = sizeof(struct in_addr);
+		return (char *)&(((struct sockaddr_in *)netaddrp)->sin_addr);
 #endif
-    default:
-	*lenp = 0;
-	return NULL;
-    }
+	default:
+		*lenp = 0;
+		return NULL;
+	}
 }
-
 
 /* given an XdmcpNetaddr, sets *addr to the network address used and
    sets *len to the number of bytes in addr.
    Returns the X protocol family used, e.g., FamilyInternet */
 
-int ConvertAddr (XdmcpNetaddr saddr, int *len, char **addr)
+int ConvertAddr(XdmcpNetaddr saddr, int *len, char **addr)
 {
-    int retval;
+	int retval;
 
-    if (len == NULL)
-        return -1;
-    *addr = NetaddrAddress(saddr, len);
-    switch (NetaddrFamily(saddr))
-    {
+	if (len == NULL)
+		return -1;
+	*addr = NetaddrAddress(saddr, len);
+	switch (NetaddrFamily(saddr)) {
 #ifdef AF_UNSPEC
-      case AF_UNSPEC:
-	retval = FamilyLocal;
-	break;
+	case AF_UNSPEC:
+		retval = FamilyLocal;
+		break;
 #endif
 #ifdef AF_UNIX
 #ifndef hpux
-      case AF_UNIX:
-        retval = FamilyLocal;
-	break;
+	case AF_UNIX:
+		retval = FamilyLocal;
+		break;
 #endif
 #endif
 #ifdef TCPCONN
-      case AF_INET:
-        retval = FamilyInternet;
-	break;
+	case AF_INET:
+		retval = FamilyInternet;
+		break;
 #endif
-      default:
-	retval = -1;
-        break;
-    }
-    WDMDebug("ConvertAddr returning %d for family %d\n", retval,
-	   NetaddrFamily(saddr));
-    return retval;
+	default:
+		retval = -1;
+		break;
+	}
+	WDMDebug("ConvertAddr returning %d for family %d\n", retval, NetaddrFamily(saddr));
+	return retval;
 }
 
-int
-addressEqual (XdmcpNetaddr a1, int len1, XdmcpNetaddr a2, int len2)
+int addressEqual(XdmcpNetaddr a1, int len1, XdmcpNetaddr a2, int len2)
 {
-    int partlen1, partlen2;
-    char *part1, *part2;
+	int partlen1, partlen2;
+	char *part1, *part2;
 
-    if (len1 != len2)
-    {
-	return FALSE;
-    }
-    if (NetaddrFamily(a1) != NetaddrFamily(a2))
-    {
-	return FALSE;
-    }
-    part1 = NetaddrPort(a1, &partlen1);
-    part2 = NetaddrPort(a2, &partlen2);
-    if (partlen1 != partlen2 || memcmp(part1, part2, partlen1) != 0)
-    {
-	return FALSE;
-    }
-    part1 = NetaddrAddress(a1, &partlen1);
-    part2 = NetaddrAddress(a2, &partlen2);
-    if (partlen1 != partlen2 || memcmp(part1, part2, partlen1) != 0)
-    {
-	return FALSE;
-    }
-    return TRUE;
+	if (len1 != len2) {
+		return FALSE;
+	}
+	if (NetaddrFamily(a1) != NetaddrFamily(a2)) {
+		return FALSE;
+	}
+	part1 = NetaddrPort(a1, &partlen1);
+	part2 = NetaddrPort(a2, &partlen2);
+	if (partlen1 != partlen2 || memcmp(part1, part2, partlen1) != 0) {
+		return FALSE;
+	}
+	part1 = NetaddrAddress(a1, &partlen1);
+	part2 = NetaddrAddress(a2, &partlen2);
+	if (partlen1 != partlen2 || memcmp(part1, part2, partlen1) != 0) {
+		return FALSE;
+	}
+	return TRUE;
 }
 
-#endif /* XDMCP */
+#endif							/* XDMCP */

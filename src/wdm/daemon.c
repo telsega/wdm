@@ -57,101 +57,98 @@ from The Open Group.
 #include <dm.h>
 #include <wdmlib.h>
 
-void
-BecomeOrphan (void)
+void BecomeOrphan(void)
 {
-    Pid_t child_id;
+	Pid_t child_id;
 #ifndef CSRG_BASED
-    int stat;
+	int stat;
 #endif
 
-    /*
-     * fork so that the process goes into the background automatically. Also
-     * has a nice side effect of having the child process get inherited by
-     * init (pid 1).
-     * Separate the child into its own process group before the parent
-     * exits.  This eliminates the possibility that the child might get
-     * killed when the init script that's running wdm exits.
-     */
+	/*
+	 * fork so that the process goes into the background automatically. Also
+	 * has a nice side effect of having the child process get inherited by
+	 * init (pid 1).
+	 * Separate the child into its own process group before the parent
+	 * exits.  This eliminates the possibility that the child might get
+	 * killed when the init script that's running wdm exits.
+	 */
 
-    child_id = fork();
-    switch (child_id) {
-    case 0:
-	/* child */
-	break;
-    case -1:
-	/* error */
-	WDMError("daemon fork failed, errno = %d\n", errno);
-	break;
+	child_id = fork();
+	switch (child_id) {
+	case 0:
+		/* child */
+		break;
+	case -1:
+		/* error */
+		WDMError("daemon fork failed, errno = %d\n", errno);
+		break;
 
-    default:
-	/* parent */
+	default:
+		/* parent */
 
 #ifndef CSRG_BASED
 #if defined(SVR4) || defined(__QNXNTO__)
-	stat = setpgid(child_id, child_id);
-	/* This gets error EPERM.  Why? */
+		stat = setpgid(child_id, child_id);
+		/* This gets error EPERM.  Why? */
 #else
 #if defined(SYSV)
-	stat = 0;	/* don't know how to set child's process group */
+		stat = 0;				/* don't know how to set child's process group */
 #else
-	stat = setpgrp(child_id, child_id);
-	if (stat != 0)
-	    WDMError("setting process grp for daemon failed, errno = %d\n",
-		     errno);
+		stat = setpgrp(child_id, child_id);
+		if (stat != 0)
+			WDMError("setting process grp for daemon failed, errno = %d\n", errno);
 #endif
 #endif
-#endif /* !CSRG_BASED */
-	exit (0);
-    }
+#endif							/* !CSRG_BASED */
+		exit(0);
+	}
 }
 
-void
-BecomeDaemon (void)
+void BecomeDaemon(void)
 {
 #ifndef CSRG_BASED
-    register int i;
+	register int i;
 
-    /*
-     * Close standard file descriptors and get rid of controlling tty
-     */
+	/*
+	 * Close standard file descriptors and get rid of controlling tty
+	 */
 
 #if defined(SYSV) || defined(SVR4) || defined(__QNXNTO__)
-    setpgrp ();
+	setpgrp();
 #else
-    setpgrp (0, getpid());
+	setpgrp(0, getpid());
 #endif
 
-    close (0); 
-    close (1);
-    close (2);
+	close(0);
+	close(1);
+	close(2);
 
 #ifndef __EMX__
 #if !((defined(SYSV) || defined(SVR4)) && defined(i386)) && !defined(__CYGWIN__)
-    if ((i = open ("/dev/tty", O_RDWR)) >= 0) {	/* did open succeed? */
+	if ((i = open("/dev/tty", O_RDWR)) >= 0) {	/* did open succeed? */
 #if defined(USG) && defined(TCCLRCTTY)
-	int zero = 0;
-	(void) ioctl (i, TCCLRCTTY, &zero);
+		int zero = 0;
+		(void)ioctl(i, TCCLRCTTY, &zero);
 #else
 #if (defined(SYSV) || defined(SVR4)) && defined(TIOCTTY)
-	int zero = 0;
-	(void) ioctl (i, TIOCTTY, &zero);
+		int zero = 0;
+		(void)ioctl(i, TIOCTTY, &zero);
 #else
-	(void) ioctl (i, TIOCNOTTY, (char *) 0);    /* detach, BSD style */
+		(void)ioctl(i, TIOCNOTTY, (char *)0);	/* detach, BSD style */
 #endif
 #endif
-	(void) close (i);
-    }
-#endif /* !((SYSV || SVR4) && i386) */
-#endif /* !__EMX__ */
+		(void)close(i);
+	}
+#endif							/* !((SYSV || SVR4) && i386) */
+#endif							/* !__EMX__ */
 
-    /*
-     * Set up the standard file descriptors.
-     */
-    (void) open ("/", O_RDONLY);	/* root inode already in core */
-    (void) dup2 (0, 1);
-    (void) dup2 (0, 2);
+	/*
+	 * Set up the standard file descriptors.
+	 */
+	(void)open("/", O_RDONLY);	/* root inode already in core */
+	(void)dup2(0, 1);
+	(void)dup2(0, 2);
 #else
-    daemon (0, 0);
-#endif /* CSRG_BASED */
+	daemon(0, 0);
+#endif							/* CSRG_BASED */
 }

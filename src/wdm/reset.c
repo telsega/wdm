@@ -34,15 +34,14 @@ from The Open Group.
  * a client remains connected with no windows.
  */
 
-# include	<dm.h>
+#include	<dm.h>
 
-# include	<X11/Xlib.h>
-# include	<signal.h>
+#include	<X11/Xlib.h>
+#include	<signal.h>
 
 #include <wdmlib.h>
 
-static int
-ignoreErrors (Display *dpy, XErrorEvent *event)
+static int ignoreErrors(Display * dpy, XErrorEvent * event)
 {
 	WDMDebug("ignoring error\n");
 	return 0;
@@ -54,58 +53,54 @@ ignoreErrors (Display *dpy, XErrorEvent *event)
  * this code wouldn't have to be this kludgy.
  */
 
-static void
-killWindows (Display *dpy, Window window)
+static void killWindows(Display * dpy, Window window)
 {
-	Window	root, parent, *children;
-	int	child;
+	Window root, parent, *children;
+	int child;
 	unsigned int nchildren = 0;
-	
-	while (XQueryTree (dpy, window, &root, &parent, &children, &nchildren)
-	       && nchildren > 0)
-	{
+
+	while (XQueryTree(dpy, window, &root, &parent, &children, &nchildren)
+		   && nchildren > 0) {
 		for (child = 0; child < nchildren; child++) {
 			WDMDebug("XKillClient 0x%lx\n", (unsigned long)children[child]);
-			XKillClient (dpy, children[child]);
+			XKillClient(dpy, children[child]);
 		}
-		XFree ((char *)children);
+		XFree((char *)children);
 	}
 }
 
-static Jmp_buf	resetJmp;
+static Jmp_buf resetJmp;
 
-static SIGVAL
-abortReset (int n)
+static SIGVAL abortReset(int n)
 {
-	Longjmp (resetJmp, 1);
+	Longjmp(resetJmp, 1);
 }
 
 /*
  * this display connection better not have any windows...
  */
- 
-void
-pseudoReset (Display *dpy)
-{
-	Window	root;
-	int	screen;
 
-	if (Setjmp (resetJmp)) {
+void pseudoReset(Display * dpy)
+{
+	Window root;
+	int screen;
+
+	if (Setjmp(resetJmp)) {
 		WDMError("pseudoReset timeout\n");
 	} else {
-		(void) Signal (SIGALRM, abortReset);
-		(void) alarm (30);
-		XSetErrorHandler (ignoreErrors);
-		for (screen = 0; screen < ScreenCount (dpy); screen++) {
+		(void)Signal(SIGALRM, abortReset);
+		(void)alarm(30);
+		XSetErrorHandler(ignoreErrors);
+		for (screen = 0; screen < ScreenCount(dpy); screen++) {
 			WDMDebug("pseudoReset screen %d\n", screen);
-			root = RootWindow (dpy, screen);
-			killWindows (dpy, root);
+			root = RootWindow(dpy, screen);
+			killWindows(dpy, root);
 		}
 		WDMDebug("before XSync\n");
-		XSync (dpy, False);
-		(void) alarm (0);
+		XSync(dpy, False);
+		(void)alarm(0);
 	}
-	Signal (SIGALRM, SIG_DFL);
-	XSetErrorHandler ((XErrorHandler)0 );
+	Signal(SIGALRM, SIG_DFL);
+	XSetErrorHandler((XErrorHandler) 0);
 	WDMDebug("pseudoReset done\n");
 }

@@ -76,8 +76,7 @@ static char *HelpMsg = N_("no help available.");
 
 /*###################################################################*/
 
-typedef struct LoginPanel
-{
+typedef struct LoginPanel {
 	WMScreen *scr;
 	WMWindow *win;
 	WMFrame *winF1;
@@ -104,8 +103,7 @@ typedef struct LoginPanel
 	WMLabel *helpTextL;
 	KeyCode retkey;
 	KeyCode tabkey;
-}
-LoginPanel;
+} LoginPanel;
 
 static LoginPanel *panel = NULL;
 
@@ -120,14 +118,16 @@ static char *ExitStr[] = { N_("Login"), N_("Reboot"), N_("Halt"),
 #ifdef WITH_EXITLOGIN
 	N_("ExitLogin"),
 #endif
-	NULL };
+	NULL
+};
 
 static char *ExitFailStr[] = { N_("Login failed"), N_("Reboot failed"),
 	N_("Halt failed"),
 #ifdef WITH_EXITLOGIN
 	N_("ExitLogin failed"),
 #endif
-	NULL };
+	NULL
+};
 
 static int WmOptionCode = 0;
 static char WmDefault[] = "wmaker:afterstep:xsession";
@@ -151,53 +151,42 @@ static int exit_request = 0;
 
 char *ProgName = "Login";
 
-char *
-read_help_file(int handle)
+char *read_help_file(int handle)
 {
 	char *HelpText = NULL;
 	struct stat s;
 
-	if(fstat(handle, &s) == 0)
-	{
+	if (fstat(handle, &s) == 0) {
 		HelpText = wmalloc(s.st_size + 1);
-		if(read(handle, HelpText, s.st_size) == -1)
-		{
-			WDMError("%s - read_help_file(): can't read %s\n",
-				ProgName, helpArg);
+		if (read(handle, HelpText, s.st_size) == -1) {
+			WDMError("%s - read_help_file(): can't read %s\n", ProgName, helpArg);
 			wfree(HelpText);
 			return NULL;
 		}
 		HelpText[s.st_size] = '\0';
-	}
-	else
-		WDMError("%s - read_help_file(): can't stat %s\n",
-			ProgName, helpArg);
+	} else
+		WDMError("%s - read_help_file(): can't stat %s\n", ProgName, helpArg);
 
 	return HelpText;
 }
 
-char *
-parse_helpArg(void)
+char *parse_helpArg(void)
 {
 	int handle;
 	char *HelpText = NULL;
 	char *defaultHelpText = NULL;
 
 	/* a good default value, even in case of errors */
-	defaultHelpText = wstrconcat("wdm --- " PACKAGE_VERSION "\n\n\n\n\n",
-				     _(HelpMsg));
+	defaultHelpText = wstrconcat("wdm --- " PACKAGE_VERSION "\n\n\n\n\n", _(HelpMsg));
 	HelpText = defaultHelpText;
 
-	if(helpArg)
-	{
-		if((handle = open(helpArg, O_RDONLY)) == -1)
-		{
-			WDMError("%s - parse_helpArg(): can't open %s\n",
-				ProgName, helpArg);
+	if (helpArg) {
+		if ((handle = open(helpArg, O_RDONLY)) == -1) {
+			WDMError("%s - parse_helpArg(): can't open %s\n", ProgName, helpArg);
 			return defaultHelpText;
 		}
 
-		if((HelpText = read_help_file(handle)) != NULL)
+		if ((HelpText = read_help_file(handle)) != NULL)
 			wfree(defaultHelpText);
 
 		close(handle);
@@ -208,9 +197,8 @@ parse_helpArg(void)
 
 /*###################################################################*/
 
-void
-wAbort()			/* for WINGs compatibility */
-{
+void wAbort()
+{								/* for WINGs compatibility */
 	WDMPanic("%s - wAbort from WINGs\n", ProgName);
 }
 
@@ -223,86 +211,75 @@ wAbort()			/* for WINGs compatibility */
 /* This file is Copyright 1998 Tom Rothamel. It's under the Gnu Public	 *
  * license, see the file COPYING for details.				 */
 
-void
-writeuc(int fd, unsigned char c)
+void writeuc(int fd, unsigned char c)
 {
 	write(fd, &c, sizeof(unsigned char));
 }
 
-void
-writestring(int fd, char *string)
+void writestring(int fd, char *string)
 {
 	int len;
 
 	len = strlen(string);
-	if(len > 255)
+	if (len > 255)
 		len = 255;
 
-	writeuc(fd, (unsigned char) len);
+	writeuc(fd, (unsigned char)len);
 	write(fd, string, len);
 }
 
-
 /*** communicate authentication information ***/
 
-static void
-OutputAuth(char *user, char *pswd)
+static void OutputAuth(char *user, char *pswd)
 {
 	writestring(wdm_fd, user ? user : "");
 	writestring(wdm_fd, pswd ? pswd : "");
 
-	if(OptionCode == 0)
-	{
-		if(WmOptionCode == 0)
+	if (OptionCode == 0) {
+		if (WmOptionCode == 0)
 			writeuc(wdm_fd, 0);	/* end of data */
-		else
-		{
+		else {
 			writeuc(wdm_fd, 1);
 			writestring(wdm_fd, WmStr[WmOptionCode]);
 			writeuc(wdm_fd, 0);	/* end of data */
 		}
-	}
-	else
-	{
+	} else {
 		writeuc(wdm_fd, OptionCode + 1);
 		writestring(wdm_fd, ExitStr[OptionCode]);
-		writeuc(wdm_fd, 0);	/* end of data */
+		writeuc(wdm_fd, 0);		/* end of data */
 	}
 	return;
 }
 
 /*###################################################################*/
 
-static void
-SetupWm()
+static void SetupWm()
 {
 	int i = 0, n = 0;
 	char *ptr = WmArg;
 
 	/* count number of items, skip empty items.
 	   n = number of items - 1 */
-	while(*ptr)
-		if(*ptr++ == ':' && *ptr != ':' && *ptr)
+	while (*ptr)
+		if (*ptr++ == ':' && *ptr != ':' && *ptr)
 			++n;
 	/* reserve one position fo NULL pointer, one for 'NoChange'
 	   and one for 'FailSafe' */
-	WmStr = (char **) malloc(sizeof(char *) * (n + 4));
+	WmStr = (char **)malloc(sizeof(char *) * (n + 4));
 	WmStr[i++] = N_("NoChange");
 
-	if(strcasecmp(WmArg, "none") != 0)	/* we explicitly don't want any
-						   choice */
-	{
+	if (strcasecmp(WmArg, "none") != 0) {	/* we explicitly don't want any
+											   choice */
 		ptr = WmArg;
-		while(*ptr)
-		{
-			while(*ptr == ':')
+		while (*ptr) {
+			while (*ptr == ':')
 				++ptr;
-			if(!*ptr)
+			if (!*ptr)
 				break;
 			WmStr[i++] = ptr;
-			while(*ptr != ':' && *ptr)
+			while (*ptr != ':' && *ptr)
 				++ptr;
-			if(!*ptr)
+			if (!*ptr)
 				break;
 			*ptr++ = '\0';
 		}
@@ -311,50 +288,46 @@ SetupWm()
 	WmStr[i] = NULL;
 }
 
-
-static void
-LoginArgs(int argc, char *argv[])
+static void LoginArgs(int argc, char *argv[])
 {
 	int c;
 
-
-	while((c = getopt(argc, argv, "asb:d:h:l:uw:c:x:f:")) != -1)
-	{
-		switch (c)
-		{
+	while ((c = getopt(argc, argv, "asb:d:h:l:uw:c:x:f:")) != -1) {
+		switch (c) {
 		case 'a':
 			animate = True;
 			break;
 		case 's':
 			smoothScale = False;
 			break;
-		case 'd':	/* display */
+		case 'd':				/* display */
 			displayArg = optarg;
 			break;
-		case 'h':	/* helpfile */
+		case 'h':				/* helpfile */
 			helpArg = optarg;
 			break;
-		case 'l':	/* logo */
+		case 'l':				/* logo */
 			logoArg = optarg;
 			break;
-		case 'u':	/* default user */
+		case 'u':				/* default user */
 			WmDefUser = True;
 			break;
-		case 'w':	/* wm list */
+		case 'w':				/* wm list */
 			WmArg = optarg;
 			break;
-		case 'b':	/* background */
+		case 'b':				/* background */
 			bgArg = optarg;
 			break;
-		case 'c':	/* configfile */
+		case 'c':				/* configfile */
 			configFile = optarg;
 			break;
-		case 'f':	/* filedescriptor for wdm comm.*/
+		case 'f':				/* filedescriptor for wdm comm. */
 			wdm_fd = strtol(optarg, NULL, 0);
-			if(wdm_fd < 1) wdm_fd = 1;
+			if (wdm_fd < 1)
+				wdm_fd = 1;
 			break;
 #ifdef HAVE_XINERAMA
-		case 'x':	/* xinerama head */
+		case 'x':				/* xinerama head */
 			xinerama_head = strtol(optarg, NULL, 0);
 			break;
 #endif
@@ -369,8 +342,7 @@ LoginArgs(int argc, char *argv[])
 
 /* write error message to the panel */
 
-static void
-ClearMsgs(LoginPanel * panel)
+static void ClearMsgs(LoginPanel * panel)
 {
 	WMSetFrameRelief(panel->msgF, WRFlat);
 	WMSetFrameTitle(panel->msgF, "");
@@ -379,8 +351,7 @@ ClearMsgs(LoginPanel * panel)
 	XFlush(WMScreenDisplay(panel->scr));
 }
 
-static void
-PrintErrMsg(LoginPanel * panel, char *msg)
+static void PrintErrMsg(LoginPanel * panel, char *msg)
 {
 	int i, x;
 	struct timespec timeReq;
@@ -394,31 +365,20 @@ PrintErrMsg(LoginPanel * panel, char *msg)
 	XFlush(WMScreenDisplay(panel->scr));
 
 	/* shake the panel like Login.app */
-	if(animate)
-	{
+	if (animate) {
 		timeReq.tv_sec = 0;
 		timeReq.tv_nsec = 15;
-		for(i = 0; i < 3; i++)
-		{
-			for(x = 2; x <= 30; x += 10)
-			{
-				WMMoveWidget(panel->win,
-					cfg->geometry.pos.x + x,
-					cfg->geometry.pos.y);
+		for (i = 0; i < 3; i++) {
+			for (x = 2; x <= 30; x += 10) {
+				WMMoveWidget(panel->win, cfg->geometry.pos.x + x, cfg->geometry.pos.y);
 				nanosleep(&timeReq, NULL);
 			}
-			for(x = 30; x >= -30; x -= 10)
-			{
-				WMMoveWidget(panel->win,
-					cfg->geometry.pos.x + x,
-					cfg->geometry.pos.y);
+			for (x = 30; x >= -30; x -= 10) {
+				WMMoveWidget(panel->win, cfg->geometry.pos.x + x, cfg->geometry.pos.y);
 				nanosleep(&timeReq, NULL);
 			}
-			for(x = -28; x <= 0; x += 10)
-			{
-				WMMoveWidget(panel->win,
-					cfg->geometry.pos.x + x,
-					cfg->geometry.pos.y);
+			for (x = -28; x <= 0; x += 10) {
+				WMMoveWidget(panel->win, cfg->geometry.pos.x + x, cfg->geometry.pos.y);
 				nanosleep(&timeReq, NULL);
 			}
 			XFlush(WMScreenDisplay(panel->scr));
@@ -429,8 +389,7 @@ PrintErrMsg(LoginPanel * panel, char *msg)
 
 /* write info message to panel */
 
-static void
-PrintInfoMsg(LoginPanel * panel, char *msg)
+static void PrintInfoMsg(LoginPanel * panel, char *msg)
 {
 	XSynchronize(WMScreenDisplay(panel->scr), True);
 	ClearMsgs(panel);
@@ -442,16 +401,14 @@ PrintInfoMsg(LoginPanel * panel, char *msg)
 
 /*###################################################################*/
 
-static void
-init_pwdfield(char *pwd)
+static void init_pwdfield(char *pwd)
 {
 	WMSetTextFieldText(panel->entryText, pwd);
 	WMSetTextFieldSecure(panel->entryText, True);
 	WMSetLabelText(panel->entryLabel, _("Password:"));
 }
 
-static void
-init_namefield(char *name)
+static void init_namefield(char *name)
 {
 	WMResizeWidget(panel->entryText, text_width, text_heigth);
 	WMSetTextFieldText(panel->entryText, name);
@@ -460,31 +417,27 @@ init_namefield(char *name)
 	WMSetTextFieldSecure(panel->entryText, False);
 }
 
-static void
-InitializeLoginInput(LoginPanel * panel)
+static void InitializeLoginInput(LoginPanel * panel)
 {
 	LoginSwitch = False;
-	if(LoginName)
+	if (LoginName)
 		wfree(LoginName);
 	LoginName = NULL;
-	if(LoginPswd)
+	if (LoginPswd)
 		wfree(LoginPswd);
 	LoginPswd = NULL;
 
 	init_namefield("");
 }
 
-static void
-PerformLogin(LoginPanel * panel, int canexit)
+static void PerformLogin(LoginPanel * panel, int canexit)
 {
-	if(LoginSwitch == False)
-	{
-		if(LoginName)
+	if (LoginSwitch == False) {
+		if (LoginName)
 			wfree(LoginName);
 		LoginName = WMGetTextFieldText(panel->entryText);
 
-		if((LoginName[0] == '\0') && (WmDefUser == False))
-		{
+		if ((LoginName[0] == '\0') && (WmDefUser == False)) {
 			InitializeLoginInput(panel);
 			PrintErrMsg(panel, _("invalid name"));
 			return;
@@ -496,18 +449,17 @@ PerformLogin(LoginPanel * panel, int canexit)
 		return;
 	}
 	LoginSwitch = False;
-	if(LoginPswd)
+	if (LoginPswd)
 		wfree(LoginPswd);
 	LoginPswd = WMGetTextFieldText(panel->entryText);
 
-	if(canexit == False)
-	{
+	if (canexit == False) {
 		init_namefield(LoginName);
 		return;
 	}
 
 	init_namefield("");
-	if(OptionCode == 0)
+	if (OptionCode == 0)
 		PrintInfoMsg(panel, _("validating"));
 	else
 		PrintInfoMsg(panel, _("exiting"));
@@ -519,24 +471,19 @@ PerformLogin(LoginPanel * panel, int canexit)
 
 /* Actions */
 
-
-static void
-goPressed(WMWidget * self, LoginPanel * panel)
+static void goPressed(WMWidget * self, LoginPanel * panel)
 {
-	if(OptionCode == 0)
-	{
-		if(LoginSwitch == False)
-		{
+	if (OptionCode == 0) {
+		if (LoginSwitch == False) {
 			PerformLogin(panel, True);
-			if(LoginSwitch == False)
+			if (LoginSwitch == False)
 				return;
 		}
 		PerformLogin(panel, True);
 		return;
 	}
-	if(LoginSwitch == True)
-	{
-		if(LoginPswd)
+	if (LoginSwitch == True) {
+		if (LoginPswd)
 			wfree(LoginPswd);
 		LoginPswd = WMGetTextFieldText(panel->entryText);
 		WMSetTextFieldText(panel->entryText, "");
@@ -545,42 +492,33 @@ goPressed(WMWidget * self, LoginPanel * panel)
 	OutputAuth(LoginName, LoginPswd);
 }
 
-static void
-startoverPressed(WMWidget * self, LoginPanel * panel)
+static void startoverPressed(WMWidget * self, LoginPanel * panel)
 {
 	ClearMsgs(panel);
 	InitializeLoginInput(panel);
 }
 
-static void
-helpPressed(WMWidget * self, LoginPanel * panel)
+static void helpPressed(WMWidget * self, LoginPanel * panel)
 {
 	static Bool helpshown = False;
-	if(!helpshown)
-	{
+	if (!helpshown) {
 		helpshown = True;
 		WMSetButtonText(panel->helpBtn, _("Close Help"));
-		WMResizeWidget(panel->win, WMWidgetWidth(panel->win),
-				WMWidgetHeight(panel->win) + help_heigth);
-	}
-	else
-	{
+		WMResizeWidget(panel->win, WMWidgetWidth(panel->win), WMWidgetHeight(panel->win) + help_heigth);
+	} else {
 		helpshown = False;
 		WMSetButtonText(panel->helpBtn, _("Help"));
-		WMResizeWidget(panel->win, WMWidgetWidth(panel->win),
-				WMWidgetHeight(panel->win) - help_heigth);
+		WMResizeWidget(panel->win, WMWidgetWidth(panel->win), WMWidgetHeight(panel->win) - help_heigth);
 	}
 }
 
-static void
-changeWm(WMWidget * self, LoginPanel * panel)
+static void changeWm(WMWidget * self, LoginPanel * panel)
 {
 	WmOptionCode = WMGetPopUpButtonSelectedItem(self);
 	WMSetFocusToWidget(panel->entryText);
 }
 
-static void
-changeOption(WMPopUpButton * self, LoginPanel * panel)
+static void changeOption(WMPopUpButton * self, LoginPanel * panel)
 {
 	int item;
 
@@ -589,21 +527,16 @@ changeOption(WMPopUpButton * self, LoginPanel * panel)
 	WMSetFocusToWidget(panel->entryText);
 }
 
-static void
-handleKeyPress(XEvent * event, void *clientData)
+static void handleKeyPress(XEvent * event, void *clientData)
 {
 	LoginPanel *panel = (LoginPanel *) clientData;
 
-	if(panel->msgFlag)
-	{
+	if (panel->msgFlag) {
 		ClearMsgs(panel);
 	}
-	if(event->xkey.keycode == panel->retkey)
-	{
+	if (event->xkey.keycode == panel->retkey) {
 		PerformLogin(panel, True);
-	}
-	else if(event->xkey.keycode == panel->tabkey)
-	{
+	} else if (event->xkey.keycode == panel->tabkey) {
 		PerformLogin(panel, False);
 	}
 }
@@ -612,8 +545,7 @@ handleKeyPress(XEvent * event, void *clientData)
 
 /* create and destroy our panel */
 
-static void
-CreateLogo(LoginPanel * panel)
+static void CreateLogo(LoginPanel * panel)
 {
 	RImage *image1, *image2;
 	WMPixmap *pixmap;
@@ -641,12 +573,10 @@ CreateLogo(LoginPanel * panel)
 
 	context = WMScreenRContext(panel->scr);
 	image1 = NULL;
-	if(logoArg != NULL)
-	{
+	if (logoArg != NULL) {
 		image1 = RLoadImage(context, logoArg, 0);
 	}
-	if(image1 == NULL)
-	{
+	if (image1 == NULL) {
 		RColor first, second;
 		first.red = 0xae;
 		first.green = 0xaa;
@@ -656,54 +586,50 @@ CreateLogo(LoginPanel * panel)
 		second.blue = 0xae;
 		image1 = RRenderGradient(200, 300, &first, &second, RDiagonalGradient);
 	}
-	if(image1 == NULL)
+	if (image1 == NULL)
 		return;
 
 #if 0
 	WDMDebug("width=%i,heigth=%i\n", image1->width, image1->height);
 #endif
-		if(image1->width > 200)
-	{			/* try to keep the aspect ratio */
-		ratio = (float) 200. / (float) image1->width;
-		h = (int) ((float) image1->height * ratio);
+	if (image1->width > 200) {	/* try to keep the aspect ratio */
+		ratio = (float)200. / (float)image1->width;
+		h = (int)((float)image1->height * ratio);
 	}
 #if 0
 	WDMDebug("new: ratio=%.5f,width=%i,heigth=%i\n", ratio, w, h);
 #endif
-		if(image1->height > 130)
-	{
-		if(h > 130)
-		{
-			ratio = (float) 130. / (float) h;
-			w = (int) ((float) w * ratio);
+	if (image1->height > 130) {
+		if (h > 130) {
+			ratio = (float)130. / (float)h;
+			w = (int)((float)w * ratio);
 			h = 130;
 		}
 	}
 #if 0
 	WDMDebug("new: ratio=%.5f,width=%i,heigth=%i\n", ratio, w, h);
 #endif
-		/* if image is too small, do not reallly resize since this looks bad */
-		/* the image will be centered */
-	if((image1->width < 200) && (image1->height < 130))
-	{
+	/* if image is too small, do not reallly resize since this looks bad */
+	/* the image will be centered */
+	if ((image1->width < 200) && (image1->height < 130)) {
 		w = image1->width;
 		h = image1->height;
 	}
 	/* last check in case the above logic is faulty */
-	if(w > 200)
+	if (w > 200)
 		w = 200;
-	if(h > 130)
+	if (h > 130)
 		h = 130;
 #if 0
 	WDMDebug("new: ratio=%.5f,width=%i,heigth=%i\n", ratio, w, h);
 #endif
-	if(smoothScale)
+	if (smoothScale)
 		image2 = RSmoothScaleImage(image1, w, h);
 	else
 		image2 = RScaleImage(image1, w, h);
 
 	RReleaseImage(image1);
-	if(image2 == NULL)
+	if (image2 == NULL)
 		return;
 	gray.red = 0xae;
 	gray.green = 0xaa;
@@ -712,8 +638,7 @@ CreateLogo(LoginPanel * panel)
 	pixmap = WMCreatePixmapFromRImage(panel->scr, image2, 0);
 	RReleaseImage(image2);
 
-	if(pixmap == NULL)
-	{
+	if (pixmap == NULL) {
 		WDMError("unable to load pixmap\n");
 		return;
 	}
@@ -722,8 +647,7 @@ CreateLogo(LoginPanel * panel)
 
 }
 
-static void
-CreateAuthFrame(LoginPanel * panel)
+static void CreateAuthFrame(LoginPanel * panel)
 {
 	char str[128] = "?";
 	WMFont *font = NULL;
@@ -746,8 +670,7 @@ CreateAuthFrame(LoginPanel * panel)
 	y += 26;
 	WMSetLabelTextAlignment(panel->welcomeMsg1, WACenter);
 	font = WMBoldSystemFontOfSize(panel->scr, 18);
-	if(font)
-	{
+	if (font) {
 		WMSetLabelFont(panel->welcomeMsg1, font);
 		WMReleaseFont(font);
 	}
@@ -758,17 +681,16 @@ CreateAuthFrame(LoginPanel * panel)
 	WMSetLabelText(panel->welcomeMsg2, str);
 	WMSetLabelTextAlignment(panel->welcomeMsg2, WACenter);
 	y = 18;
-	if(strlen(str) > 20)
+	if (strlen(str) > 20)
 		y = 16;
-	if(strlen(str) > 30)
+	if (strlen(str) > 30)
 		y = 14;
-	if(strlen(str) > 34)
+	if (strlen(str) > 34)
 		y = 12;
-	if(strlen(str) > 40)
+	if (strlen(str) > 40)
 		y = 10;
 	font = WMBoldSystemFontOfSize(panel->scr, y);
-	if(font)
-	{
+	if (font) {
 		WMSetLabelFont(panel->welcomeMsg2, font);
 		WMReleaseFont(font);
 	}
@@ -779,8 +701,7 @@ CreateAuthFrame(LoginPanel * panel)
 	WMMoveWidget(panel->entryLabel, 10, y);
 	WMResizeWidget(panel->entryLabel, 100, 26);
 	font = WMBoldSystemFontOfSize(panel->scr, 14);
-	if(font)
-	{
+	if (font) {
 		WMSetLabelFont(panel->entryLabel, font);
 		WMReleaseFont(font);
 	}
@@ -794,8 +715,7 @@ CreateAuthFrame(LoginPanel * panel)
 	WMSetTextFieldSecure(panel->entryText, False);
 }
 
-static void
-CreateMsgsFrames(LoginPanel * panel)
+static void CreateMsgsFrames(LoginPanel * panel)
 {
 	WMFont *font;
 
@@ -810,8 +730,7 @@ CreateMsgsFrames(LoginPanel * panel)
 	WMResizeWidget(panel->msgL, 260, 26);
 	WMMoveWidget(panel->msgL, 5, 2);
 	font = WMBoldSystemFontOfSize(panel->scr, 14);
-	if(font)
-	{
+	if (font) {
 		WMSetLabelFont(panel->msgL, font);
 		WMReleaseFont(font);
 	}
@@ -820,8 +739,7 @@ CreateMsgsFrames(LoginPanel * panel)
 
 }
 
-static void
-CreatePopups(LoginPanel * panel)
+static void CreatePopups(LoginPanel * panel)
 {
 	int i;
 
@@ -837,8 +755,7 @@ CreatePopups(LoginPanel * panel)
 	WMResizeWidget(panel->wmBtn, 110, 25);
 	WMSetPopUpButtonAction(panel->wmBtn, (WMAction *) changeWm, panel);
 	i = 0;
-	while(WmStr[i] != NULL)
-	{
+	while (WmStr[i] != NULL) {
 		WMAddPopUpButtonItem(panel->wmBtn, _(WmStr[i]));
 		i++;
 	}
@@ -853,18 +770,15 @@ CreatePopups(LoginPanel * panel)
 	panel->exitBtn = WMCreatePopUpButton(panel->exitF);
 	WMMoveWidget(panel->exitBtn, 4, 15);
 	WMResizeWidget(panel->exitBtn, 90, 25);
-	WMSetPopUpButtonAction(panel->exitBtn, (WMAction *) changeOption,
-			       panel);
+	WMSetPopUpButtonAction(panel->exitBtn, (WMAction *) changeOption, panel);
 	i = 0;
-	while(ExitStr[i] != NULL)
-	{
+	while (ExitStr[i] != NULL) {
 		WMAddPopUpButtonItem(panel->exitBtn, _(ExitStr[i]));
 		i++;
 	}
 }
 
-static void
-CreateButtons(LoginPanel * panel)
+static void CreateButtons(LoginPanel * panel)
 {
 	int i;
 
@@ -883,8 +797,7 @@ CreateButtons(LoginPanel * panel)
 
 	i += 96;
 	panel->startoverBtn = WMCreateCommandButton(panel->cmdF);
-	WMSetButtonAction(panel->startoverBtn, (WMAction *) startoverPressed,
-			  panel);
+	WMSetButtonAction(panel->startoverBtn, (WMAction *) startoverPressed, panel);
 	WMMoveWidget(panel->startoverBtn, i, 8);
 	WMSetButtonText(panel->startoverBtn, _("Start Over"));
 	WMResizeWidget(panel->startoverBtn, 80, 25);
@@ -897,8 +810,7 @@ CreateButtons(LoginPanel * panel)
 	WMResizeWidget(panel->goBtn, 80, 25);
 }
 
-static void
-CreateHelpFrames(LoginPanel * panel)
+static void CreateHelpFrames(LoginPanel * panel)
 {
 	int height;
 	char *HelpText = NULL;
@@ -909,8 +821,7 @@ CreateHelpFrames(LoginPanel * panel)
 	WMResizeWidget(panel->helpF, WMWidgetWidth(panel->win), help_heigth);
 
 	panel->helpSV = WMCreateScrollView(panel->helpF);
-	WMResizeWidget(panel->helpSV,
-			(WMWidgetWidth(panel->win) - 10), (help_heigth - 10));
+	WMResizeWidget(panel->helpSV, (WMWidgetWidth(panel->win) - 10), (help_heigth - 10));
 	WMMoveWidget(panel->helpSV, 5, 5);
 	WMSetScrollViewRelief(panel->helpSV, WRSunken);
 	WMSetScrollViewHasVerticalScroller(panel->helpSV, True);
@@ -924,14 +835,11 @@ CreateHelpFrames(LoginPanel * panel)
 	panel->helpTextL = WMCreateLabel(panel->helpTextF);
 	WMSetLabelTextAlignment(panel->helpTextL, WALeft);
 
-	height = W_GetTextHeight(WMDefaultSystemFont(panel->scr),
-			HelpText, (WMWidgetWidth(panel->win) - 60), True) + 10;
+	height = W_GetTextHeight(WMDefaultSystemFont(panel->scr), HelpText, (WMWidgetWidth(panel->win) - 60), True) + 10;
 
-	WMResizeWidget(panel->helpTextF,
-			(WMWidgetWidth(panel->win) - 50), height);
+	WMResizeWidget(panel->helpTextF, (WMWidgetWidth(panel->win) - 50), height);
 	WMMoveWidget(panel->helpTextL, 2, 1);
-	WMResizeWidget(panel->helpTextL,
-			(WMWidgetWidth(panel->win) - 60), height - 5);
+	WMResizeWidget(panel->helpTextL, (WMWidgetWidth(panel->win) - 60), height - 5);
 
 	WMSetLabelText(panel->helpTextL, HelpText);
 	WMSetLabelWraps(panel->helpTextL, True);
@@ -939,13 +847,12 @@ CreateHelpFrames(LoginPanel * panel)
 	wfree(HelpText);
 }
 
-static LoginPanel *
-CreateLoginPanel(WMScreen *scr, WDMLoginConfig *cfg)
+static LoginPanel *CreateLoginPanel(WMScreen * scr, WDMLoginConfig * cfg)
 {
 	LoginPanel *panel;
 
 	panel = malloc(sizeof(LoginPanel));
-	if(!panel)
+	if (!panel)
 		return NULL;
 	memset(panel, 0, sizeof(LoginPanel));
 	panel->scr = scr;
@@ -953,12 +860,10 @@ CreateLoginPanel(WMScreen *scr, WDMLoginConfig *cfg)
 	/* basic window and frames */
 
 	panel->win = WMCreateWindow(scr, ProgName);
-	WMResizeWidget(panel->win,
-			cfg->geometry.size.width, cfg->geometry.size.height);
+	WMResizeWidget(panel->win, cfg->geometry.size.width, cfg->geometry.size.height);
 
 	panel->winF1 = WMCreateFrame(panel->win);
-	WMResizeWidget(panel->winF1,
-			cfg->geometry.size.width, cfg->geometry.size.height);
+	WMResizeWidget(panel->winF1, cfg->geometry.size.width, cfg->geometry.size.height);
 	WMSetFrameRelief(panel->winF1, WRRaised);
 
 	CreateAuthFrame(panel);
@@ -988,8 +893,7 @@ CreateLoginPanel(WMScreen *scr, WDMLoginConfig *cfg)
 	WMMapWidget(panel->helpF);
 	WMMapSubwidgets(panel->helpSV);
 	WMMapSubwidgets(panel->helpTextF);
-	WMSetScrollViewContentView(panel->helpSV,
-				   WMWidgetView(panel->helpTextF));
+	WMSetScrollViewContentView(panel->helpSV, WMWidgetView(panel->helpTextF));
 
 	WMSetPopUpButtonSelectedItem(panel->wmBtn, 0);
 	WMSetPopUpButtonSelectedItem(panel->exitBtn, 0);
@@ -999,22 +903,18 @@ CreateLoginPanel(WMScreen *scr, WDMLoginConfig *cfg)
 	return panel;
 }
 
-static void
-DestroyLoginPanel(LoginPanel * panel)
+static void DestroyLoginPanel(LoginPanel * panel)
 {
 	int width, height;
 	struct timespec timeReq;
 
 	/* roll up the window before destroying it */
-	if(animate)
-	{
+	if (animate) {
 		timeReq.tv_sec = 0;
 		timeReq.tv_nsec = 400;
 		XSynchronize(WMScreenDisplay(panel->scr), True);	/* slow things up */
-		for(width = WMWidgetWidth(panel->win) - 2,
-			height = WMWidgetHeight(panel->win) - 1;
-		    (height > 0 && width > 0); height -= 15, width -= 30)
-		{
+		for (width = WMWidgetWidth(panel->win) - 2,
+			 height = WMWidgetHeight(panel->win) - 1; (height > 0 && width > 0); height -= 15, width -= 30) {
 			WMResizeWidget(panel->win, width, height);
 			nanosleep(&timeReq, NULL);
 		}
@@ -1029,58 +929,51 @@ DestroyLoginPanel(LoginPanel * panel)
 
 /** set the background **/
 
-static int
-parseBG()
+static int parseBG()
 {
 	char *tmp;
 
-	if(bgArg == NULL)
+	if (bgArg == NULL)
 		return 0;
 	tmp = strchr(bgArg, ':');
-	if(tmp == NULL)
+	if (tmp == NULL)
 		return 0;
 	*tmp = '\0';
 	bgOption = tmp + 1;
-	while(*bgOption == ' ')
+	while (*bgOption == ' ')
 		bgOption++;
-	if(*bgOption == '\0')
+	if (*bgOption == '\0')
 		return 0;
 	tmp = bgArg;
-	while(*tmp != '\0')
-	{
+	while (*tmp != '\0') {
 		*tmp = tolower(*tmp);
 		tmp++;
 	}
-	if(strcmp(bgArg, "pixmap") == 0)
+	if (strcmp(bgArg, "pixmap") == 0)
 		return 1;
-	if(strcmp(bgArg, "solid") == 0)
+	if (strcmp(bgArg, "solid") == 0)
 		return 2;
-	if(strcmp(bgArg, "hgradient") == 0)
+	if (strcmp(bgArg, "hgradient") == 0)
 		return 3;
-	if(strcmp(bgArg, "vgradient") == 0)
+	if (strcmp(bgArg, "vgradient") == 0)
 		return 4;
-	if(strcmp(bgArg, "dgradient") == 0)
+	if (strcmp(bgArg, "dgradient") == 0)
 		return 5;
 	return 0;
 }
 
-static RImage *
-loadBGpixmap(RContext * rcontext)
+static RImage *loadBGpixmap(RContext * rcontext)
 {
 	RImage *image, *tmp;
 
 	image = RLoadImage(rcontext, bgOption, 0);
-	if(image == NULL)
-	{
-		WDMError("%s could not load bg image %s\n",
-			ProgName, bgOption);
+	if (image == NULL) {
+		WDMError("%s could not load bg image %s\n", ProgName, bgOption);
 		return NULL;
 	}
 	tmp = RScaleImage(image, screen.size.width, screen.size.height);
-	if(tmp == NULL)
-	{
-		WDMError("%s could not resize bg image %s\n",
-			ProgName, bgOption);
+	if (tmp == NULL) {
+		WDMError("%s could not resize bg image %s\n", ProgName, bgOption);
 		RReleaseImage(image);
 		return NULL;
 	}
@@ -1088,35 +981,30 @@ loadBGpixmap(RContext * rcontext)
 	return tmp;
 }
 
-static RColor **
-allocmem(int num)
+static RColor **allocmem(int num)
 {
 	RColor **colors = NULL;
 	int i;
 
 	colors = malloc(sizeof(RColor *) * (num + 1));
-	for(i = 0; i < num; i++)
-	{
+	for (i = 0; i < num; i++) {
 		colors[i] = malloc(sizeof(RColor));
 	}
 	colors[i] = NULL;
 	return colors;
 }
 
-static void
-freemem(int num, RColor ** colors)
+static void freemem(int num, RColor ** colors)
 {
 	int i;
 
-	for(i = 0; i < num; i++)
-	{
+	for (i = 0; i < num; i++) {
 		free(colors[i]);
 	}
 	free(colors);
 }
 
-static RImage *
-createBGcolor(WMScreen * scr, RContext * rcontext, char *str, int style)
+static RImage *createBGcolor(WMScreen * scr, RContext * rcontext, char *str, int style)
 {
 	RImage *image;
 	RColor **colors = NULL;
@@ -1126,35 +1014,28 @@ createBGcolor(WMScreen * scr, RContext * rcontext, char *str, int style)
 	char *tmp, *colorstr;
 
 	colorstr = str;
-	while(*colorstr)
-	{
+	while (*colorstr) {
 		num_colors++;
 		tmp = strchr(colorstr, ',');
-		if(tmp == NULL)
+		if (tmp == NULL)
 			colorstr = str + strlen(str);
 		else
 			colorstr = tmp + 1;
 	}
-	if(num_colors == 0)
+	if (num_colors == 0)
 		return NULL;
 	colors = allocmem(num_colors);
 	tmp = str;
-	for(i = 0; i < num_colors; i++)
-	{
+	for (i = 0; i < num_colors; i++) {
 		colorstr = tmp;
 		tmp = strchr(tmp, ',');
-		if(tmp != NULL)
-		{
+		if (tmp != NULL) {
 			*tmp = '\0';
 			tmp++;
-		}
-		else
+		} else
 			tmp = colorstr + strlen(colorstr);
-		if(!XParseColor
-		   (WMScreenDisplay(scr), rcontext->cmap, colorstr, &color))
-		{
-			WDMError("could not parse color \"%s\"\n",
-				colorstr);
+		if (!XParseColor(WMScreenDisplay(scr), rcontext->cmap, colorstr, &color)) {
+			WDMError("could not parse color \"%s\"\n", colorstr);
 			freemem(num_colors, colors);
 			return NULL;
 		}
@@ -1162,14 +1043,12 @@ createBGcolor(WMScreen * scr, RContext * rcontext, char *str, int style)
 		colors[i]->green = color.green >> 8;
 		colors[i]->blue = color.blue >> 8;
 	}
-	image = RRenderMultiGradient(screen.size.width, screen.size.height,
-				     colors, style);
+	image = RRenderMultiGradient(screen.size.width, screen.size.height, colors, style);
 	freemem(num_colors, colors);
 	return image;
 }
 
-static void
-setBG(WMScreen * scr)
+static void setBG(WMScreen * scr)
 {
 	Window root_window;
 	int cpc = 4, render_mode = RBestMatchRendering, default_depth = 8;
@@ -1181,33 +1060,29 @@ setBG(WMScreen * scr)
 
 	/* if not specified or none, then skip setting background */
 	/* user can still set background via other means */
-	if(bgArg == NULL)
+	if (bgArg == NULL)
 		return;
-	if(strcasecmp(bgArg, "none") == 0)
+	if (strcasecmp(bgArg, "none") == 0)
 		return;
 
 	/* use of scr->rootWin is temporary hack */
 	root_window = scr->rootWin;
 	default_depth = WMScreenDepth(scr);
-	if(default_depth <= 8)
+	if (default_depth <= 8)
 		render_mode = RDitheredRendering;
 	rattr.flags = RC_RenderMode | RC_ColorsPerChannel;
 	rattr.render_mode = render_mode;
 	rattr.colors_per_channel = cpc;
 	/* use of scr->screen is temporary hack */
 	rcontext = RCreateContext(WMScreenDisplay(scr), scr->screen, &rattr);
-	if(rcontext == NULL)
-	{
-		WDMError("%s could not initialize "
-			"graphics library context: %s\n",
-			ProgName, RMessageForError(RErrorCode));
+	if (rcontext == NULL) {
+		WDMError("%s could not initialize " "graphics library context: %s\n", ProgName, RMessageForError(RErrorCode));
 		return;
 	}
 
-	defcolor.pixel = 0L;	/* default=black */
+	defcolor.pixel = 0L;		/* default=black */
 
-	switch (parseBG())
-	{
+	switch (parseBG()) {
 	case 1:
 		image = loadBGpixmap(rcontext);
 		break;
@@ -1227,8 +1102,7 @@ setBG(WMScreen * scr)
 		image = NULL;
 		break;
 	}
-	if(image == NULL)
-	{
+	if (image == NULL) {
 		XSetWindowBackground(WMScreenDisplay(scr), root_window, 0L);
 		XClearWindow(WMScreenDisplay(scr), root_window);
 		XFlush(WMScreenDisplay(scr));
@@ -1245,26 +1119,23 @@ setBG(WMScreen * scr)
 
 /* signal processing */
 
-static void
-SignalUsr1(int ignored)		/* oops, an error */
-{
+static void SignalUsr1(int ignored)
+{								/* oops, an error */
 	InitializeLoginInput(panel);
 	PrintErrMsg(panel, _(ExitFailStr[OptionCode]));
 	signal(SIGUSR1, SignalUsr1);
 }
 
-static void
-SignalTerm(int ignored)		/* all done */
-{
-	exit_request = 1;	/* corrects some hanging problems, thanks to A. Kabaev */
+static void SignalTerm(int ignored)
+{								/* all done */
+	exit_request = 1;			/* corrects some hanging problems, thanks to A. Kabaev */
 }
 
 /*###################################################################*/
 
 /*  M A I N  */
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	WMScreen *scr;
 	int xine_count;
@@ -1283,54 +1154,44 @@ main(int argc, char **argv)
 #endif
 
 	animate = False;
-	LoginArgs(argc, argv);	/* process our args */
+	LoginArgs(argc, argv);		/* process our args */
 
 	cfg = LoadConfiguration(configFile);	/* load configs */
-	if(cfg)
-	{
+	if (cfg) {
 		printf("geometry: %ix%i+%i+%i\n",
-				cfg->geometry.size.width,
-				cfg->geometry.size.height,
-				cfg->geometry.pos.x,
-				cfg->geometry.pos.y);
+			   cfg->geometry.size.width, cfg->geometry.size.height, cfg->geometry.pos.x, cfg->geometry.pos.y);
 	}
 
-	SetupWm();		/* and init the startup list */
+	SetupWm();					/* and init the startup list */
 
 	WMInitializeApplication(ProgName, &argc, argv);
 	scr = WMOpenScreen(displayArg);
-	if(!scr)
-	{
+	if (!scr) {
 		WDMPanic("could not initialize Screen\n");
 		exit(2);
 	}
-
 #if WINGS_H_VERSION < 20040406
-	if(cfg->multibyte)
+	if (cfg->multibyte)
 		scr->useMultiByte = True;
 #endif
 
 #ifdef USE_AA
-	if(cfg->aaenabled)
-	{
+	if (cfg->aaenabled) {
 		scr->antialiasedText = True;
-		scr->normalFont = WMSystemFontOfSize(scr,
-				WINGsConfiguration.defaultFontSize);
+		scr->normalFont = WMSystemFontOfSize(scr, WINGsConfiguration.defaultFontSize);
 
-		scr->boldFont = WMBoldSystemFontOfSize(scr, 
-				WINGsConfiguration.defaultFontSize);
+		scr->boldFont = WMBoldSystemFontOfSize(scr, WINGsConfiguration.defaultFontSize);
 
-		if(!scr->boldFont)
+		if (!scr->boldFont)
 			scr->boldFont = scr->normalFont;
 
-		if(!scr->normalFont)
-		{
+		if (!scr->normalFont) {
 			WDMError("could not load any fonts.");
 			exit(2);
 		}
 	}
 #endif
-	if(cfg->animations)
+	if (cfg->animations)
 		animate = True;
 
 	screen.pos.x = 0;
@@ -1338,14 +1199,11 @@ main(int argc, char **argv)
 	screen.size.width = WMScreenWidth(scr);
 	screen.size.height = WMScreenHeight(scr);
 #ifdef HAVE_XINERAMA
-	if(XineramaIsActive(WMScreenDisplay(scr)))
-	{
+	if (XineramaIsActive(WMScreenDisplay(scr))) {
 		xine = XineramaQueryScreens(WMScreenDisplay(scr), &xine_count);
 
-		if(xine != NULL)
-		{
-			if(xinerama_head < xine_count)
-			{
+		if (xine != NULL) {
+			if (xinerama_head < xine_count) {
 				screen.pos.x = xine[xinerama_head].x_org;
 				screen.pos.y = xine[xinerama_head].y_org;
 				screen.size.width = xine[xinerama_head].width;
@@ -1355,30 +1213,22 @@ main(int argc, char **argv)
 	}
 #endif
 
-	if(cfg->geometry.pos.x == INT_MIN || cfg->geometry.pos.y == INT_MIN)
-	{
-		cfg->geometry.pos.x = screen.pos.x +
-			(screen.size.width - cfg->geometry.size.width)/2;
-		cfg->geometry.pos.y = screen.pos.y +
-			(screen.size.height - cfg->geometry.size.height)/2;
+	if (cfg->geometry.pos.x == INT_MIN || cfg->geometry.pos.y == INT_MIN) {
+		cfg->geometry.pos.x = screen.pos.x + (screen.size.width - cfg->geometry.size.width) / 2;
+		cfg->geometry.pos.y = screen.pos.y + (screen.size.height - cfg->geometry.size.height) / 2;
 	}
 
 	XSynchronize(WMScreenDisplay(scr), False);
 
 	/* use of scr->rootWin is temporary hack */
 	XWarpPointer(WMScreenDisplay(scr), None,
-		     scr->rootWin,
-		     0, 0, 0, 0,
-		     (cfg->geometry.pos.x + (cfg->geometry.size.width - 10)),
-		     (cfg->geometry.pos.y + (cfg->geometry.size.height - 10)));
+				 scr->rootWin,
+				 0, 0, 0, 0,
+				 (cfg->geometry.pos.x + (cfg->geometry.size.width - 10)), (cfg->geometry.pos.y + (cfg->geometry.size.height - 10)));
 	/* use of scr->rootWin is temporary hack */
-	XDefineCursor(WMScreenDisplay(scr),
-		      scr->rootWin,
-		      XCreateFontCursor(WMScreenDisplay(scr),
-					XC_top_left_arrow));
+	XDefineCursor(WMScreenDisplay(scr), scr->rootWin, XCreateFontCursor(WMScreenDisplay(scr), XC_top_left_arrow));
 
 	setBG(scr);
-
 
 	panel = CreateLoginPanel(scr, cfg);
 	WMSetWindowTitle(panel->win, ProgName);
@@ -1390,13 +1240,11 @@ main(int argc, char **argv)
 	WMMoveWidget(panel->win, cfg->geometry.pos.x, cfg->geometry.pos.y);
 	WMResizeWidget(panel->win, cfg->geometry.size.width, cfg->geometry.size.height);
 	WMSetFocusToWidget(panel->entryText);
-	XSetInputFocus(WMScreenDisplay(scr), WMWidgetXID(panel->win),
-		       RevertToParent, CurrentTime);
+	XSetInputFocus(WMScreenDisplay(scr), WMWidgetXID(panel->win), RevertToParent, CurrentTime);
 	panel->retkey = XKeysymToKeycode(WMScreenDisplay(scr), XK_Return);
 	panel->tabkey = XKeysymToKeycode(WMScreenDisplay(scr), XK_Tab);
 
-	WMCreateEventHandler(WMWidgetView(panel->entryText), KeyPressMask,
-			     handleKeyPress, panel);
+	WMCreateEventHandler(WMWidgetView(panel->entryText), KeyPressMask, handleKeyPress, panel);
 
 	exit_request = 0;
 	signal(SIGUSR1, SignalUsr1);
@@ -1404,8 +1252,7 @@ main(int argc, char **argv)
 	signal(SIGINT, SignalTerm);
 	signal(SIGPIPE, SIG_DFL);
 
-	while(!exit_request)
-	{
+	while (!exit_request) {
 		XEvent event;
 		WMNextEvent(WMScreenDisplay(scr), &event);
 		WMHandleEvent(&event);

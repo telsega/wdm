@@ -34,28 +34,27 @@ from The Open Group.
  * various utility routines
  */
 
-# include   <dm.h>
+#include   <dm.h>
 
 #include <X11/Xmu/SysUtil.h>	/* for XmuGetHostname */
 
 #include <signal.h>
 #include <wdmlib.h>
 
-# define isblank(c)	((c) == ' ' || c == '\t')
+#define isblank(c)	((c) == ' ' || c == '\t')
 
-char **
-parseArgs (char **argv, char *string)
+char **parseArgs(char **argv, char *string)
 {
-	char	*word;
-	char	*save;
-	char    **newargv;
-	int	i;
+	char *word;
+	char *save;
+	char **newargv;
+	int i;
 
 	i = 0;
 	while (argv && argv[i])
 		++i;
 	if (!argv) {
-		argv = (char **) malloc (sizeof (char *));
+		argv = (char **)malloc(sizeof(char *));
 		if (!argv) {
 			WDMError("parseArgs: out of memory");
 			return 0;
@@ -63,22 +62,21 @@ parseArgs (char **argv, char *string)
 	}
 	word = string;
 	for (;;) {
-		if (!*string || isblank (*string)) {
+		if (!*string || isblank(*string)) {
 			if (word != string) {
-				newargv = (char **) realloc ((char *) argv,
-					(unsigned) ((i + 2) * sizeof (char *)));
-				save = malloc ((unsigned) (string - word + 1));
+				newargv = (char **)realloc((char *)argv, (unsigned)((i + 2) * sizeof(char *)));
+				save = malloc((unsigned)(string - word + 1));
 				if (!newargv || !save) {
 					WDMError("parseArgs: out of memory");
-					free ((char *) argv);
+					free((char *)argv);
 					if (save)
-						free (save);
+						free(save);
 					return 0;
 				} else {
-				    argv = newargv;
+					argv = newargv;
 				}
-				argv[i] = strncpy (save, word, string-word);
-				argv[i][string-word] = '\0';
+				argv[i] = strncpy(save, word, string - word);
+				argv[i][string - word] = '\0';
 				i++;
 			}
 			if (!*string)
@@ -91,63 +89,58 @@ parseArgs (char **argv, char *string)
 	return argv;
 }
 
-void
-freeArgs (char **argv)
+void freeArgs(char **argv)
 {
-    char    **a;
+	char **a;
 
-    if (!argv)
-	return;
+	if (!argv)
+		return;
 
-    for (a = argv; *a; a++)
-	free (*a);
-    free ((char *) argv);
+	for (a = argv; *a; a++)
+		free(*a);
+	free((char *)argv);
 }
 
-void
-CleanUpChild (void)
+void CleanUpChild(void)
 {
 #ifdef CSRG_BASED
 	setsid();
 #else
-	setpgid (0, getpid ());
-	sigsetmask (0);
+	setpgid(0, getpid());
+	sigsetmask(0);
 #endif
 #ifdef SIGCHLD
-	(void) Signal (SIGCHLD, SIG_DFL);
+	(void)Signal(SIGCHLD, SIG_DFL);
 #endif
-	(void) Signal (SIGTERM, SIG_DFL);
-	(void) Signal (SIGPIPE, SIG_DFL);
-	(void) Signal (SIGALRM, SIG_DFL);
-	(void) Signal (SIGHUP, SIG_DFL);
-	CloseOnFork ();
+	(void)Signal(SIGTERM, SIG_DFL);
+	(void)Signal(SIGPIPE, SIG_DFL);
+	(void)Signal(SIGALRM, SIG_DFL);
+	(void)Signal(SIGHUP, SIG_DFL);
+	CloseOnFork();
 	WDMCloseLog();
 }
 
 static char localHostbuf[256];
-static int  gotLocalHostname;
+static int gotLocalHostname;
 
-char *
-localHostname (void)
+char *localHostname(void)
 {
-    if (!gotLocalHostname)
-    {
-	XmuGetHostname (localHostbuf, sizeof (localHostbuf) - 1);
-	gotLocalHostname = 1;
-    }
-    return localHostbuf;
+	if (!gotLocalHostname) {
+		XmuGetHostname(localHostbuf, sizeof(localHostbuf) - 1);
+		gotLocalHostname = 1;
+	}
+	return localHostbuf;
 }
 
-SIGVAL (*Signal (int sig, SIGFUNC handler))(int)
-{
+SIGVAL(*Signal(int sig, SIGFUNC handler))(int) {
 #if !defined(X_NOT_POSIX) && !defined(__EMX__)
-    struct sigaction sigact, osigact;
-    sigact.sa_handler = handler;
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_flags = 0;
-    sigaction(sig, &sigact, &osigact);
-    return osigact.sa_handler;
+	struct sigaction sigact, osigact;
+	sigact.sa_handler = handler;
+	sigemptyset(&sigact.sa_mask);
+	sigact.sa_flags = 0;
+	sigaction(sig, &sigact, &osigact);
+	return osigact.sa_handler;
 #else
-    return signal(sig, handler);
+	return signal(sig, handler);
 #endif
 }

@@ -33,56 +33,48 @@ authorization.
 #ifndef _DM_AUTH_H_
 #define _DM_AUTH_H_ 1
 
-#include <dm.h>	/* for struct display */
+#include <dm.h>					/* for struct display */
 
-extern void	MitInitAuth (unsigned short name_len, char *name);
-extern Xauth	*MitGetAuth (unsigned short namelen, char *name);
+extern void MitInitAuth(unsigned short name_len, char *name);
+extern Xauth *MitGetAuth(unsigned short namelen, char *name);
 
 #ifdef HASXDMAUTH
-extern void	XdmInitAuth (unsigned short name_len, char *name);
-extern Xauth	*XdmGetAuth (unsigned short namelen, char *name);
+extern void XdmInitAuth(unsigned short name_len, char *name);
+extern Xauth *XdmGetAuth(unsigned short namelen, char *name);
 #ifdef XDMCP
-extern void	XdmGetXdmcpAuth (
-    struct protoDisplay	*pdpy,
-    unsigned short	authorizationNameLen,
-    char		*authorizationName);
+extern void XdmGetXdmcpAuth(struct protoDisplay *pdpy, unsigned short authorizationNameLen, char *authorizationName);
 #else
 #define XdmGetXdmcpAuth NULL
 #endif
 #endif
 
 #ifdef SECURE_RPC
-extern void	SecureRPCInitAuth (unsigned short name_len, char *name);
-extern Xauth	*SecureRPCGetAuth (unsigned short namelen, char *name);
+extern void SecureRPCInitAuth(unsigned short name_len, char *name);
+extern Xauth *SecureRPCGetAuth(unsigned short namelen, char *name);
 #endif
 
 #ifdef K5AUTH
-extern void	Krb5InitAuth (unsigned short name_len, char *name);
-extern Xauth	*Krb5GetAuth (unsigned short namelen, char *name);
+extern void Krb5InitAuth(unsigned short name_len, char *name);
+extern Xauth *Krb5GetAuth(unsigned short namelen, char *name);
 #endif
 
 /* auth.c */
-extern int ValidAuthorization (unsigned short name_length, char *name);
-
+extern int ValidAuthorization(unsigned short name_length, char *name);
 
 #ifdef XDMCP
 
-extern void
-SetProtoDisplayAuthorization (
-    struct protoDisplay	*pdpy,
-    unsigned short	authorizationNameLen,
-    char		*authorizationName);
+extern void SetProtoDisplayAuthorization(struct protoDisplay *pdpy, unsigned short authorizationNameLen, char *authorizationName);
 
-#endif /* XDMCP */
+#endif							/* XDMCP */
 
-extern int SaveServerAuthorizations (struct display *d, Xauth **auths, int count);
-extern void CleanUpFileName (char *src, char *dst, int len);
-extern void RemoveUserAuthorization (struct display *d, struct verify_info *verify);
-extern void SetAuthorization (struct display *d);
-extern void SetLocalAuthorization (struct display *d);
-extern void SetUserAuthorization (struct display *d, struct verify_info *verify);
+extern int SaveServerAuthorizations(struct display *d, Xauth ** auths, int count);
+extern void CleanUpFileName(char *src, char *dst, int len);
+extern void RemoveUserAuthorization(struct display *d, struct verify_info *verify);
+extern void SetAuthorization(struct display *d);
+extern void SetLocalAuthorization(struct display *d);
+extern void SetUserAuthorization(struct display *d, struct verify_info *verify);
 
 /* genauth.c */
-extern void GenerateAuthData (char *auth, int len);
+extern void GenerateAuthData(char *auth, int len);
 
-#endif /* _DM_AUTH_H_ */
+#endif							/* _DM_AUTH_H_ */

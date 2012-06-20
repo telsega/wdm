@@ -23,14 +23,12 @@
 #include <wdmPrefs.h>
 #include <stdlib.h>
 
-typedef struct testPanel_
-{
+typedef struct testPanel_ {
 	WMBox *box;
 	WMButton *button;
 } testPanel;
 
-static void *
-CreateTestPanel(WMWidget *win)
+static void *CreateTestPanel(WMWidget * win)
 {
 	testPanel *data = malloc(sizeof(testPanel));
 	data->box = WMCreateBox(win);
@@ -41,44 +39,37 @@ CreateTestPanel(WMWidget *win)
 	data->button = WMCreateSwitchButton(data->box);
 	WMMapWidget(data->button);
 	WMSetButtonText(data->button, "test button");
-	WMAddBoxSubview(data->box, WMWidgetView(data->button),
-			False, False, 100, 100, 10);
+	WMAddBoxSubview(data->box, WMWidgetView(data->button), False, False, 100, 100, 10);
 
 	return data;
 }
 
-static void
-DestroyTestPanel(Panel *panel)
+static void DestroyTestPanel(Panel * panel)
 {
 	free(panel);
 }
 
-static void
-ShowTestPanel(Panel *panel)
+static void ShowTestPanel(Panel * panel)
 {
 	testPanel *data = panel->data;
 	WMMapWidget(data->box);
 }
 
-static void
-HideTestPanel(Panel *panel)
+static void HideTestPanel(Panel * panel)
 {
 	testPanel *data = panel->data;
 	WMUnmapWidget(data->box);
 }
 
-static void
-SaveTestData(Panel *panel)
+static void SaveTestData(Panel * panel)
 {
 }
 
-static void
-UndoTestData(Panel *panel)
+static void UndoTestData(Panel * panel)
 {
 }
 
-void
-InitTestPanel(WMWidget *win)
+void InitTestPanel(WMWidget * win)
 {
 	Panel *panel = calloc(1, sizeof(Panel));
 	panel->description = "simple test panel";
@@ -90,4 +81,3 @@ InitTestPanel(WMWidget *win)
 	panel->data = CreateTestPanel(win);
 	AddSectionButton(panel, "");
 }
-

@@ -41,111 +41,93 @@ in this Software without prior written authorization from The Open Group.
 
 #include <wdmlib.h>
 
-static struct protoDisplay	*protoDisplays;
+static struct protoDisplay *protoDisplays;
 
-struct protoDisplay *
-FindProtoDisplay (
-    XdmcpNetaddr    address,
-    int		    addrlen,
-    CARD16	    displayNumber)
+struct protoDisplay *FindProtoDisplay(XdmcpNetaddr address, int addrlen, CARD16 displayNumber)
 {
-    struct protoDisplay	*pdpy;
+	struct protoDisplay *pdpy;
 
-    WDMDebug("FindProtoDisplay\n");
-    for (pdpy = protoDisplays; pdpy; pdpy=pdpy->next)
-    {
-	if (pdpy->displayNumber == displayNumber &&
-	    addressEqual (address, addrlen, pdpy->address, pdpy->addrlen))
-	{
-	    return pdpy;
+	WDMDebug("FindProtoDisplay\n");
+	for (pdpy = protoDisplays; pdpy; pdpy = pdpy->next) {
+		if (pdpy->displayNumber == displayNumber && addressEqual(address, addrlen, pdpy->address, pdpy->addrlen)) {
+			return pdpy;
+		}
 	}
-    }
-    return (struct protoDisplay *) 0;
+	return (struct protoDisplay *)0;
 }
 
-static void
-TimeoutProtoDisplays (Time_t now)
+static void TimeoutProtoDisplays(Time_t now)
 {
-    struct protoDisplay	*pdpy, *next;
+	struct protoDisplay *pdpy, *next;
 
-    for (pdpy = protoDisplays; pdpy; pdpy = next)
-    {
-	next = pdpy->next;
-	if (pdpy->date < now - PROTO_TIMEOUT)
-	    DisposeProtoDisplay (pdpy);
-    }
+	for (pdpy = protoDisplays; pdpy; pdpy = next) {
+		next = pdpy->next;
+		if (pdpy->date < now - PROTO_TIMEOUT)
+			DisposeProtoDisplay(pdpy);
+	}
 }
 
-struct protoDisplay *
-NewProtoDisplay (
-    XdmcpNetaddr    address,
-    int		    addrlen,
-    CARD16	    displayNumber,
-    CARD16	    connectionType,
-    ARRAY8Ptr	    connectionAddress,
-    CARD32	    sessionID)
+struct protoDisplay *NewProtoDisplay(XdmcpNetaddr address,
+									 int addrlen,
+									 CARD16 displayNumber, CARD16 connectionType, ARRAY8Ptr connectionAddress, CARD32 sessionID)
 {
-    struct protoDisplay	*pdpy;
-    Time_t date;
+	struct protoDisplay *pdpy;
+	Time_t date;
 
-    WDMDebug("NewProtoDisplay\n");
-    time (&date);
-    TimeoutProtoDisplays (date);
-    pdpy = (struct protoDisplay *) malloc (sizeof *pdpy);
-    if (!pdpy)
-	return NULL;
-    pdpy->address = (XdmcpNetaddr) malloc (addrlen);
-    if (!pdpy->address)
-    {
-	free ((char *) pdpy);
-	return NULL;
-    }
-    pdpy->addrlen = addrlen;
-    memmove( pdpy->address, address, addrlen);
-    pdpy->displayNumber = displayNumber;
-    pdpy->connectionType = connectionType;
-    pdpy->date = date;
-    if (!XdmcpCopyARRAY8 (connectionAddress, &pdpy->connectionAddress))
-    {
-	free ((char *) pdpy->address);
-	free ((char *) pdpy);
-	return NULL;
-    }
-    pdpy->sessionID = sessionID;
-    pdpy->fileAuthorization = (Xauth *) NULL;
-    pdpy->xdmcpAuthorization = (Xauth *) NULL;
-    pdpy->next = protoDisplays;
-    protoDisplays = pdpy;
-    return pdpy;
+	WDMDebug("NewProtoDisplay\n");
+	time(&date);
+	TimeoutProtoDisplays(date);
+	pdpy = (struct protoDisplay *)malloc(sizeof *pdpy);
+	if (!pdpy)
+		return NULL;
+	pdpy->address = (XdmcpNetaddr) malloc(addrlen);
+	if (!pdpy->address) {
+		free((char *)pdpy);
+		return NULL;
+	}
+	pdpy->addrlen = addrlen;
+	memmove(pdpy->address, address, addrlen);
+	pdpy->displayNumber = displayNumber;
+	pdpy->connectionType = connectionType;
+	pdpy->date = date;
+	if (!XdmcpCopyARRAY8(connectionAddress, &pdpy->connectionAddress)) {
+		free((char *)pdpy->address);
+		free((char *)pdpy);
+		return NULL;
+	}
+	pdpy->sessionID = sessionID;
+	pdpy->fileAuthorization = (Xauth *) NULL;
+	pdpy->xdmcpAuthorization = (Xauth *) NULL;
+	pdpy->next = protoDisplays;
+	protoDisplays = pdpy;
+	return pdpy;
 }
 
-void
-DisposeProtoDisplay (pdpy)
-    struct protoDisplay	*pdpy;
+void DisposeProtoDisplay(pdpy)
+struct protoDisplay *pdpy;
 {
-    struct protoDisplay	*p, *prev;
+	struct protoDisplay *p, *prev;
 
-    prev = 0;
-    for (p = protoDisplays; p; p=p->next)
-    {
-	if (p == pdpy)
-	    break;
-	prev = p;
-    }
-    if (!p)
-	return;
-    if (prev)
-	prev->next = pdpy->next;
-    else
-	protoDisplays = pdpy->next;
-    bzero(&pdpy->key, sizeof(pdpy->key));
-    if (pdpy->fileAuthorization)
-	XauDisposeAuth (pdpy->fileAuthorization);
-    if (pdpy->xdmcpAuthorization)
-	XauDisposeAuth (pdpy->xdmcpAuthorization);
-    XdmcpDisposeARRAY8 (&pdpy->connectionAddress);
-    free ((char *) pdpy->address);
-    free ((char *) pdpy);
+	prev = 0;
+	for (p = protoDisplays; p; p = p->next) {
+		if (p == pdpy)
+			break;
+		prev = p;
+	}
+	if (!p)
+		return;
+	if (prev)
+		prev->next = pdpy->next;
+	else
+		protoDisplays = pdpy->next;
+	bzero(&pdpy->key, sizeof(pdpy->key));
+	if (pdpy->fileAuthorization)
+		XauDisposeAuth(pdpy->fileAuthorization);
+	if (pdpy->xdmcpAuthorization)
+		XauDisposeAuth(pdpy->xdmcpAuthorization);
+	XdmcpDisposeARRAY8(&pdpy->connectionAddress);
+	free((char *)pdpy->address);
+	free((char *)pdpy);
 }
 
-#endif /* XDMCP */
+#endif							/* XDMCP */

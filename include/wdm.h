@@ -27,5 +27,4 @@ extern void WDMBufferedLogMessages(int level, char *buffer, int n);
 extern int WDMRedirectFileToLog(int level, pid_t pid, int fd);
 extern void WDMRedirectStderr(int level);
 
-#endif /* _WDM_H */
-
+#endif							/* _WDM_H */

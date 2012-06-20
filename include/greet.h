@@ -38,9 +38,9 @@ from The Open Group.
  * Negative values indicate an error.
  */
 typedef enum {
-    Greet_Session_Over = 0,	/* session managed and over */
-    Greet_Success = 1,		/* greet succeeded, session not managed */
-    Greet_Failure = -1		/* greet failed */
+	Greet_Session_Over = 0,		/* session managed and over */
+	Greet_Success = 1,			/* greet succeeded, session not managed */
+	Greet_Failure = -1			/* greet failed */
 } greet_user_rtn;
 
 /*
@@ -63,9 +63,6 @@ typedef enum {
 
 extern greet_user_rtn GreetUser(
 #if NeedFunctionPrototypes
-    struct display *d,
-    Display **dpy,
-    struct verify_info *verify,
-    struct greet_info *greet
+								   struct display *d, Display ** dpy, struct verify_info *verify, struct greet_info *greet
 #endif
-);
+	);

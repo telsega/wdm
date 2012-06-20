@@ -25,8 +25,7 @@
 #include <wdmconfig.h>
 #include <wdmlib.h>
 
-typedef struct _WDMLoginConfig
-{
+typedef struct _WDMLoginConfig {
 	WMRect geometry;
 #ifdef USE_AA
 	Bool aaenabled;
@@ -37,5 +36,4 @@ typedef struct _WDMLoginConfig
 
 extern WDMLoginConfig *LoadConfiguration(char *configFile);
 
-#endif /* _WDMLOGIN_H */
-
+#endif							/* _WDMLOGIN_H */

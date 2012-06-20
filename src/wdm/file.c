@@ -32,217 +32,190 @@ from The Open Group.
  * file.c
  */
 
-# include	<dm.h>
+#include	<dm.h>
 
-# include	<ctype.h>
+#include	<ctype.h>
 
 #include <wdmlib.h>
 
-static int
-DisplayTypeMatch (DisplayType d1, DisplayType d2)
+static int DisplayTypeMatch(DisplayType d1, DisplayType d2)
 {
-	return d1.location == d2.location &&
-	       d1.lifetime == d2.lifetime &&
-	       d1.origin == d2.origin;
+	return d1.location == d2.location && d1.lifetime == d2.lifetime && d1.origin == d2.origin;
 }
 
-static void
-freeFileArgs (char **args)
+static void freeFileArgs(char **args)
 {
-    char    **a;
+	char **a;
 
-    for (a = args; *a; a++)
-	free (*a);
-    free ((char *) args);
+	for (a = args; *a; a++)
+		free(*a);
+	free((char *)args);
 }
 
-static char **
-splitIntoWords (char *s)
+static char **splitIntoWords(char *s)
 {
-    char    **args, **newargs;
-    char    *wordStart;
-    int	    nargs;
+	char **args, **newargs;
+	char *wordStart;
+	int nargs;
 
-    args = 0;
-    nargs = 0;
-    while (*s)
-    {
-	while (*s && isspace (*s))
-	    ++s;
-	if (!*s || *s == '#')
-	    break;
-	wordStart = s;
-	while (*s && *s != '#' && !isspace (*s))
-	    ++s;
+	args = 0;
+	nargs = 0;
+	while (*s) {
+		while (*s && isspace(*s))
+			++s;
+		if (!*s || *s == '#')
+			break;
+		wordStart = s;
+		while (*s && *s != '#' && !isspace(*s))
+			++s;
+		if (!args) {
+			args = (char **)malloc(2 * sizeof(char *));
+			if (!args)
+				return NULL;
+		} else {
+			newargs = (char **)realloc((char *)args, (nargs + 2) * sizeof(char *));
+			if (!newargs) {
+				freeFileArgs(args);
+				return NULL;
+			}
+			args = newargs;
+		}
+		args[nargs] = malloc(s - wordStart + 1);
+		if (!args[nargs]) {
+			freeFileArgs(args);
+			return NULL;
+		}
+		strncpy(args[nargs], wordStart, s - wordStart);
+		args[nargs][s - wordStart] = '\0';
+		++nargs;
+		args[nargs] = NULL;
+	}
+	return args;
+}
+
+static char **copyArgs(char **args)
+{
+	char **a, **new, **n;
+
+	for (a = args; *a; a++)
+		/* SUPPRESS 530 */
+		;
+	new = (char **)malloc((a - args + 1) * sizeof(char *));
+	if (!new)
+		return NULL;
+	n = new;
+	a = args;
+	/* SUPPRESS 560 */
+	while ((*n++ = *a++))
+		/* SUPPRESS 530 */
+		;
+	return new;
+}
+
+static void freeSomeArgs(char **args, int n)
+{
+	char **a;
+
+	a = args;
+	while (n--)
+		free(*a++);
+	free((char *)args);
+}
+
+void ParseDisplay(char *source, DisplayType * acceptableTypes, int numAcceptable)
+{
+	char **args, **argv, **a;
+	char *name, *class, *type;
+	struct display *d;
+	int usedDefault;
+	DisplayType displayType;
+
+	args = splitIntoWords(source);
 	if (!args)
-	{
-    	    args = (char **) malloc (2 * sizeof (char *));
-    	    if (!args)
-	    	return NULL;
+		return;
+	if (!args[0]) {
+		WDMError("Missing display name in servers file\n");
+		freeFileArgs(args);
+		return;
 	}
-	else
-	{
-	    newargs = (char **) realloc ((char *) args,
-					 (nargs+2)*sizeof (char *));
-	    if (!newargs)
-	    {
-	    	freeFileArgs (args);
-	    	return NULL;
-	    }
-	    args = newargs;
+	name = args[0];
+	if (!args[1]) {
+		WDMError("Missing display type for %s\n", args[0]);
+		freeFileArgs(args);
+		return;
 	}
-	args[nargs] = malloc (s - wordStart + 1);
-	if (!args[nargs])
-	{
-	    freeFileArgs (args);
-	    return NULL;
+	displayType = parseDisplayType(args[1], &usedDefault);
+	class = NULL;
+	type = args[1];
+	argv = args + 2;
+	/*
+	 * extended syntax; if the second argument doesn't
+	 * exactly match a legal display type and the third
+	 * argument does, use the second argument as the
+	 * display class string
+	 */
+	if (usedDefault && args[2]) {
+		displayType = parseDisplayType(args[2], &usedDefault);
+		if (!usedDefault) {
+			class = args[1];
+			type = args[2];
+			argv = args + 3;
+		}
 	}
-	strncpy (args[nargs], wordStart, s - wordStart);
-	args[nargs][s-wordStart] = '\0';
-	++nargs;
-	args[nargs] = NULL;
-    }
-    return args;
-}
-
-static char **
-copyArgs (char **args)
-{
-    char    **a, **new, **n;
-
-    for (a = args; *a; a++)
-	/* SUPPRESS 530 */
-	;
-    new = (char **) malloc ((a - args + 1) * sizeof (char *));
-    if (!new)
-	return NULL;
-    n = new;
-    a = args;
-    /* SUPPRESS 560 */
-    while ((*n++ = *a++))
-	/* SUPPRESS 530 */
-	;
-    return new;
-}
-
-static void
-freeSomeArgs (char **args, int n)
-{
-    char    **a;
-
-    a = args;
-    while (n--)
-	free (*a++);
-    free ((char *) args);
-}
-
-void
-ParseDisplay (char *source, DisplayType *acceptableTypes, int numAcceptable)
-{
-    char		**args, **argv, **a;
-    char		*name, *class, *type;
-    struct display	*d;
-    int			usedDefault;
-    DisplayType		displayType;
-
-    args = splitIntoWords (source);
-    if (!args)
-	return;
-    if (!args[0])
-    {
-	WDMError("Missing display name in servers file\n");
-	freeFileArgs (args);
-	return;
-    }
-    name = args[0];
-    if (!args[1])
-    {
-	WDMError("Missing display type for %s\n", args[0]);
-	freeFileArgs (args);
-	return;
-    }
-    displayType = parseDisplayType (args[1], &usedDefault);
-    class = NULL;
-    type = args[1];
-    argv = args + 2;
-    /*
-     * extended syntax; if the second argument doesn't
-     * exactly match a legal display type and the third
-     * argument does, use the second argument as the
-     * display class string
-     */
-    if (usedDefault && args[2])
-    {
-	displayType = parseDisplayType (args[2], &usedDefault);
-	if (!usedDefault)
-	{
-	    class = args[1];
-	    type = args[2];
-	    argv = args + 3;
+	while (numAcceptable) {
+		if (DisplayTypeMatch(*acceptableTypes, displayType))
+			break;
+		--numAcceptable;
+		++acceptableTypes;
 	}
-    }
-    while (numAcceptable)
-    {
-	if (DisplayTypeMatch (*acceptableTypes, displayType))
-	    break;
-	--numAcceptable;
-	++acceptableTypes;
-    }
-    if (!numAcceptable)
-    {
-	WDMError("Unacceptable display type %s for display %s\n",
-		  type, name);
-    }
-    d = FindDisplayByName (name);
-    if (d)
-    {
-	d->state = OldEntry;
-	if (class && strcmp (d->class, class))
-	{
-	    char    *newclass;
-
-	    newclass = malloc ((unsigned) (strlen (class) + 1));
-	    if (newclass)
-	    {
-		free (d->class);
-		strcpy (newclass, class);
-		d->class = newclass;
-	    }
+	if (!numAcceptable) {
+		WDMError("Unacceptable display type %s for display %s\n", type, name);
 	}
-	WDMDebug("Found existing display:  %s %s %s", d->name, d->class , type);
-	freeFileArgs (d->argv);
-    }
-    else
-    {
-	d = NewDisplay (name, class);
-	WDMDebug("Found new display:  %s %s %s",
-		d->name, d->class ? d->class : "", type);
-    }
-    d->displayType = displayType;
-    d->argv = copyArgs (argv);
-    for (a = d->argv; a && *a; a++)
-	WDMDebug(" %s", *a);
-    WDMDebug("\n");
-    freeSomeArgs (args, argv - args);
+	d = FindDisplayByName(name);
+	if (d) {
+		d->state = OldEntry;
+		if (class && strcmp(d->class, class)) {
+			char *newclass;
+
+			newclass = malloc((unsigned)(strlen(class) + 1));
+			if (newclass) {
+				free(d->class);
+				strcpy(newclass, class);
+				d->class = newclass;
+			}
+		}
+		WDMDebug("Found existing display:  %s %s %s", d->name, d->class, type);
+		freeFileArgs(d->argv);
+	} else {
+		d = NewDisplay(name, class);
+		WDMDebug("Found new display:  %s %s %s", d->name, d->class ? d->class : "", type);
+	}
+	d->displayType = displayType;
+	d->argv = copyArgs(argv);
+	for (a = d->argv; a && *a; a++)
+		WDMDebug(" %s", *a);
+	WDMDebug("\n");
+	freeSomeArgs(args, argv - args);
 }
 
 static struct displayMatch {
-	char		*name;
-	DisplayType	type;
+	char *name;
+	DisplayType type;
 } displayTypes[] = {
-	{ "local",		{ Local, Permanent, FromFile } },
-	{ "foreign",		{ Foreign, Permanent, FromFile } },
-	{ 0,			{ Local, Permanent, FromFile } },
-};
+	{
+		"local", {
+	Local, Permanent, FromFile}}, {
+		"foreign", {
+	Foreign, Permanent, FromFile}}, {
+		0, {
+Local, Permanent, FromFile}},};
 
-DisplayType
-parseDisplayType (char *string, int *usedDefault)
+DisplayType parseDisplayType(char *string, int *usedDefault)
 {
-	struct displayMatch	*d;
+	struct displayMatch *d;
 
 	for (d = displayTypes; d->name; d++)
-		if (!strcmp (d->name, string))
-		{
+		if (!strcmp(d->name, string)) {
 			*usedDefault = 0;
 			return d->type;
 		}

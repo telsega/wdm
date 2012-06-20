@@ -27,23 +27,18 @@
  * Bool bool;
  * WDMCheckPLBool(pl, True, &bool);
  */
-Bool
-WDMCheckPLBool(WMPropList *pl, void *def, void *target)
+Bool WDMCheckPLBool(WMPropList * pl, void *def, void *target)
 {
-	Bool *bool_target = (Bool*)target;
+	Bool *bool_target = (Bool *) target;
 	char *text = NULL;
 
 	WDMDebug("WDMCheckPLBool(%p, %p, %p)\n", (void *)pl, def, target);
-	*bool_target = (Bool)def;
-	if(pl && WMIsPLString(pl))
-	{
+	*bool_target = (Bool) def;
+	if (pl && WMIsPLString(pl)) {
 		text = WMGetFromPLString(pl);
-		if(!strcasecmp(text, "yes"))
-		{
+		if (!strcasecmp(text, "yes")) {
 			*bool_target = True;
-		}
-		else if(!strcasecmp(text, "no"))
-		{
+		} else if (!strcasecmp(text, "no")) {
 			*bool_target = False;
 		}
 	}
@@ -55,15 +50,13 @@ WDMCheckPLBool(WMPropList *pl, void *def, void *target)
  * char *text;
  * WDMCheckPLString(pl, NULL, &text);
  */
-Bool
-WDMCheckPLString(WMPropList *pl, void *def, void *target)
+Bool WDMCheckPLString(WMPropList * pl, void *def, void *target)
 {
-	char **charptr_target = (char**)target;
-	char *value = (char*)def;
+	char **charptr_target = (char **)target;
+	char *value = (char *)def;
 
-	WDMDebug("WDMCheckPLString(%p, %p, %p)\n", (void*)pl, def, target);
-	if(pl && WMIsPLString(pl))
-	{
+	WDMDebug("WDMCheckPLString(%p, %p, %p)\n", (void *)pl, def, target);
+	if (pl && WMIsPLString(pl)) {
 		value = WMGetFromPLString(pl);
 	}
 
@@ -76,32 +69,27 @@ WDMCheckPLString(WMPropList *pl, void *def, void *target)
  * WMArray *array;
  * WDMCheckPLArray(pl, spec, &array);
  */
-Bool
-WDMCheckPLArray(WMPropList *pl, void *def, void *target)
+Bool WDMCheckPLArray(WMPropList * pl, void *def, void *target)
 {
-	WMArray **array_target = (WMArray**)target;
-	WDMArraySpec *spec = (WDMArraySpec*)def;
+	WMArray **array_target = (WMArray **) target;
+	WDMArraySpec *spec = (WDMArraySpec *) def;
 	void *entry = NULL;
 	int i, count;
 
-	WDMDebug("WDMCheckPLArray(%p, %p, %p)\n", (void*)pl, def, target);
-	if(!pl || !WMIsPLArray(pl)) return False;
+	WDMDebug("WDMCheckPLArray(%p, %p, %p)\n", (void *)pl, def, target);
+	if (!pl || !WMIsPLArray(pl))
+		return False;
 
 	count = WMGetPropListItemCount(pl);
-	*array_target =
-		WMCreateArrayWithDestructor(count, spec->destructor);
+	*array_target = WMCreateArrayWithDestructor(count, spec->destructor);
 
-	for(i = 0; i < count; ++i)
-	{
-		if(!(*spec->checker)(
-			WMGetFromPLArray(pl, i), spec->data, &entry))
-		{
+	for (i = 0; i < count; ++i) {
+		if (!(*spec->checker) (WMGetFromPLArray(pl, i), spec->data, &entry)) {
 			WMFreeArray(*array_target);
 			*array_target = NULL;
 			return False;
 		}
-		if(spec->addnull == True || entry != NULL)
-		{
+		if (spec->addnull == True || entry != NULL) {
 			WMAddToArray(*array_target, entry);
 		}
 	}
@@ -113,27 +101,24 @@ WDMCheckPLArray(WMPropList *pl, void *def, void *target)
  * struct *s;
  * WDMCheckPLDictionary(pl, spec, &s);
  */
-Bool
-WDMCheckPLDictionary(WMPropList *pl, void *def, void *target)
+Bool WDMCheckPLDictionary(WMPropList * pl, void *def, void *target)
 {
-	WDMDictionarySpec *spec = (WDMDictionarySpec*)def;
+	WDMDictionarySpec *spec = (WDMDictionarySpec *) def;
 	WDMDictionaryStruct *fields = spec->fields;
-	void **data = (void**)target;
+	void **data = (void **)target;
 	WMPropList *key = NULL, *value = NULL;
 	Bool plok;
 
-	WDMDebug("WDMCheckPLDictionary(%p, %p, %p)\n", (void*)pl, def, target);
-	
-	plok = pl && WMIsPLDictionary(pl);
-	*data = (void*)wmalloc(spec->size);
-	memset(*data, 0, spec->size);
-	while(fields->key)
-	{
-		key = WMCreatePLString(fields->key);
-		value = plok?WMGetFromPLDictionary(pl, key):NULL;
+	WDMDebug("WDMCheckPLDictionary(%p, %p, %p)\n", (void *)pl, def, target);
 
-		(*fields->checker)(value, fields->data,
-				   (void *)((unsigned char*)*data + fields->offset));
+	plok = pl && WMIsPLDictionary(pl);
+	*data = (void *)wmalloc(spec->size);
+	memset(*data, 0, spec->size);
+	while (fields->key) {
+		key = WMCreatePLString(fields->key);
+		value = plok ? WMGetFromPLDictionary(pl, key) : NULL;
+
+		(*fields->checker) (value, fields->data, (void *)((unsigned char *)*data + fields->offset));
 
 		WMReleasePropList(key);
 		key = NULL;
@@ -148,20 +133,15 @@ WDMCheckPLDictionary(WMPropList *pl, void *def, void *target)
  * created and that string will be added to it.
  * def is ignored here.
  */
-Bool
-WDMCheckPLStringOrArray(WMPropList *pl, void *def, void *target)
+Bool WDMCheckPLStringOrArray(WMPropList * pl, void *def, void *target)
 {
 	char *text;
-	WMArray **array_target = (WMArray**)target;
-	static WDMArraySpec array_of_strings =
-		{WDMCheckPLString, NULL, wfree, False};
+	WMArray **array_target = (WMArray **) target;
+	static WDMArraySpec array_of_strings = { WDMCheckPLString, NULL, wfree, False };
 
-	if(pl && WMIsPLString(pl))
-	{
-		if(WDMCheckPLString(pl, NULL, &text) && text)
-		{
-			*array_target = 
-				WMCreateArrayWithDestructor(1, wfree);
+	if (pl && WMIsPLString(pl)) {
+		if (WDMCheckPLString(pl, NULL, &text) && text) {
+			*array_target = WMCreateArrayWithDestructor(1, wfree);
 
 			WMAddToArray(*array_target, text);
 
@@ -170,4 +150,3 @@ WDMCheckPLStringOrArray(WMPropList *pl, void *def, void *target)
 	}
 	return WDMCheckPLArray(pl, &array_of_strings, target);
 }
-

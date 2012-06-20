@@ -21,36 +21,32 @@
 #include <wdmlib.h>
 #include <string.h>
 
-const char *
-WDMGetEnv(char * const env[], const char *name)
+const char *WDMGetEnv(char *const env[], const char *name)
 {
 	size_t len;
-	
+
 	WDMDebug("WDMGetEnv env=%p, name=\"%s\"\n", (void *)env, name);
 
-	if(name == NULL)
-	{
+	if (name == NULL) {
 		WDMError("WDMGetEnv: internal error: name == NULL\n");
 		return NULL;
 	}
 
-	if(env == NULL || name[0] == '\0')
+	if (env == NULL || name[0] == '\0')
 		return NULL;
 
 	len = strlen(name);
 
-	while(*env)
-	{
-		if(!strncmp(*env, name, len) && (*env)[len] == '=')
+	while (*env) {
+		if (!strncmp(*env, name, len) && (*env)[len] == '=')
 			return &(*env)[len + 1];
 		++env;
 	}
-	
+
 	return NULL;
 }
 
-char **
-WDMPutEnv(char **env, const char *string)
+char **WDMPutEnv(char **env, const char *string)
 {
 	const char *name_end;
 	char **ep;
@@ -58,42 +54,35 @@ WDMPutEnv(char **env, const char *string)
 	size_t len;
 
 	WDMDebug("WDMPutEnv env=%p, string=\"%s\"\n", (void *)env, string);
-	
-	if(string == NULL)
-	{
+
+	if (string == NULL) {
 		WDMError("WDMPutEnv: internal error: string == NULL\n");
 		return env;
 	}
 
-	if(string[0] == '\0')
+	if (string[0] == '\0')
 		return env;
 
-	if((name_end = strchr(string, '=')) != NULL)
-	{
-		if(name_end == string)
+	if ((name_end = strchr(string, '=')) != NULL) {
+		if (name_end == string)
 			return env;
 
 		ep = env;
 		len = name_end - string;
-		while(ep && *ep)
-		{
-			if(!strncmp(*ep, string, len) && (*ep)[len] == '=')
+		while (ep && *ep) {
+			if (!strncmp(*ep, string, len) && (*ep)[len] == '=')
 				break;
 			++ep;
 		}
 
-		if(ep == NULL || *ep == NULL)
-		{
-			for(envsize = 0; env && env[envsize] != 0; ++envsize)
-				/*nothing*/;
-			WDMDebug("WDMPutEnv: realloc env to size %i\n",
-					envsize + 2);
+		if (ep == NULL || *ep == NULL) {
+			for (envsize = 0; env && env[envsize] != 0; ++envsize)
+				/*nothing */ ;
+			WDMDebug("WDMPutEnv: realloc env to size %i\n", envsize + 2);
 			env = wrealloc(env, (envsize + 2) * sizeof(char *));
 			env[envsize++] = wstrdup((char *)string);
 			env[envsize] = NULL;
-		}
-		else
-		{
+		} else {
 			wfree(*ep);
 			*ep = wstrdup((char *)string);
 		}
@@ -102,22 +91,18 @@ WDMPutEnv(char **env, const char *string)
 	return env;
 }
 
-char **
-WDMSetEnv(char **env, const char *name, const char *value)
+char **WDMSetEnv(char **env, const char *name, const char *value)
 {
 	char *string;
 
-	WDMDebug("WDMSetEnv env=%p, name=\"%s\", value=\"%s\"\n",
-			(void *)env, name, value);
-	
-	if(name == NULL || name[0] == '\0')
-	{
+	WDMDebug("WDMSetEnv env=%p, name=\"%s\", value=\"%s\"\n", (void *)env, name, value);
+
+	if (name == NULL || name[0] == '\0') {
 		WDMError("WDMSetEnv: internal error: name == NULL or empty\n");
 		return env;
 	}
-	
-	if(value == NULL)
-	{
+
+	if (value == NULL) {
 		WDMError("WDMSetEnv: internal error: value == NULL\n");
 		return env;
 	}
@@ -125,16 +110,15 @@ WDMSetEnv(char **env, const char *name, const char *value)
 	string = wstrdup((char *)name);
 	string = wstrappend(string, "=");
 	string = wstrappend(string, (char *)value);
-	
+
 	env = WDMPutEnv(env, string);
-	
+
 	wfree(string);
 
 	return env;
 }
 
-char **
-WDMUnsetEnv(char **env, const char *name)
+char **WDMUnsetEnv(char **env, const char *name)
 {
 	char **ep;
 	int envsize;
@@ -142,52 +126,47 @@ WDMUnsetEnv(char **env, const char *name)
 
 	WDMDebug("WDMUnsetEnv env=%p, name=\"%s\"\n", (void *)env, name);
 
-	if(name == NULL)
-	{
+	if (name == NULL) {
 		WDMError("WDMUnsetEnv: internal error: name == NULL\n");
 		return 0;
 	}
 
-	if(env == NULL || name[0] == '\0')
+	if (env == NULL || name[0] == '\0')
 		return 0;
 
 	ep = env;
 	len = strlen(name);
-	while(*ep)
-	{
-		if(!strncmp(*ep, name, len) && (*ep)[len] == '=')
+	while (*ep) {
+		if (!strncmp(*ep, name, len) && (*ep)[len] == '=')
 			break;
 		++ep;
 	}
-	
-	if(ep == NULL || *ep == NULL)
+
+	if (ep == NULL || *ep == NULL)
 		return 0;
 
-	for(envsize = 0; ep[envsize] != 0; ++envsize)
-		/*nothing*/;
-	WDMDebug("WDMUnsetEnv: moving %i items of %p from %p to %p \n",
-			envsize, (void*)env, (void*)(ep + 1), (void*)ep);
+	for (envsize = 0; ep[envsize] != 0; ++envsize)
+		/*nothing */ ;
+	WDMDebug("WDMUnsetEnv: moving %i items of %p from %p to %p \n", envsize, (void *)env, (void *)(ep + 1), (void *)ep);
 	memmove(ep, ep + 1, envsize * sizeof(char *));
-	
-	for(envsize = 0; env[envsize] != 0; ++envsize)
-		/*nothing*/;
+
+	for (envsize = 0; env[envsize] != 0; ++envsize)
+		/*nothing */ ;
 
 	WDMDebug("WDMUnsetEnv: realloc env to size %i\n", envsize + 1);
-	return wrealloc(env, (envsize + 1) * sizeof(char*));
+	return wrealloc(env, (envsize + 1) * sizeof(char *));
 }
 
-void
-WDMFreeEnv(char **env)
+void WDMFreeEnv(char **env)
 {
 	char **ep = env;
 
 	WDMDebug("WDMFreeEnv env=%p\n", (void *)env);
-	
-	if(env == NULL)
+
+	if (env == NULL)
 		return;
-	
-	while(*ep)
-	{
+
+	while (*ep) {
 		wfree(*ep);
 		ep++;
 	}
@@ -195,12 +174,10 @@ WDMFreeEnv(char **env)
 	wfree(env);
 }
 
-void
-WDMPrintEnv(char **env)
+void WDMPrintEnv(char **env)
 {
 	WDMDebug("WDMPrintEnv env=%p\n", (void *)env);
 
-	while(env && *env)
+	while (env && *env)
 		WDMDebug("%s\n", *env++);
 }
-

@@ -25,70 +25,68 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-void *
-WDMSockaddrGetPort(struct sockaddr *from, int *len)
+void *WDMSockaddrGetPort(struct sockaddr *from, int *len)
 {
-	switch(from->sa_family)
-	{
-		case AF_INET:
-			if(len) *len = sizeof(in_port_t);
-			return (void *)
-				&(((struct sockaddr_in *)from)->sin_port);
-			break;
-		case AF_INET6:
-			if(len) *len = sizeof(in_port_t);
-			return (void *)
-				&(((struct sockaddr_in6 *)from)->sin6_port);
-			break;
-		default:
-			if(len) *len = 0;
-			return NULL;
+	switch (from->sa_family) {
+	case AF_INET:
+		if (len)
+			*len = sizeof(in_port_t);
+		return (void *)
+			&(((struct sockaddr_in *)from)->sin_port);
+		break;
+	case AF_INET6:
+		if (len)
+			*len = sizeof(in_port_t);
+		return (void *)
+			&(((struct sockaddr_in6 *)from)->sin6_port);
+		break;
+	default:
+		if (len)
+			*len = 0;
+		return NULL;
 	}
 }
 
-void *
-WDMSockaddrGetAddr(struct sockaddr *from, int *len)
+void *WDMSockaddrGetAddr(struct sockaddr *from, int *len)
 {
-	switch(from->sa_family)
-	{
-		case AF_INET:
-			if(len) *len = sizeof(struct in_addr);
-			return (void *)
-				&(((struct sockaddr_in *)from)->sin_addr);
-			break;
-		case AF_INET6:
-			if(len) *len = sizeof(struct in6_addr);
-			return (void *)
-				&(((struct sockaddr_in6 *)from)->sin6_addr);
-			break;
-		default:
-			if(len) *len = 0;
-			return NULL;
+	switch (from->sa_family) {
+	case AF_INET:
+		if (len)
+			*len = sizeof(struct in_addr);
+		return (void *)
+			&(((struct sockaddr_in *)from)->sin_addr);
+		break;
+	case AF_INET6:
+		if (len)
+			*len = sizeof(struct in6_addr);
+		return (void *)
+			&(((struct sockaddr_in6 *)from)->sin6_addr);
+		break;
+	default:
+		if (len)
+			*len = 0;
+		return NULL;
 	}
 }
 
-char *
-WDMGetHostName(struct sockaddr *from)
+char *WDMGetHostName(struct sockaddr *from)
 {
 	struct hostent *he;
 	void *addr;
 	int len;
 
 	addr = WDMSockaddrGetAddr(from, &len);
-	if((he = gethostbyaddr(addr, len, from->sa_family))==NULL)
+	if ((he = gethostbyaddr(addr, len, from->sa_family)) == NULL)
 		return NULL;
 
 	return wstrdup(he->h_name);
 }
 
-char *
-WDMGetHostAddr(struct sockaddr *from)
+char *WDMGetHostAddr(struct sockaddr *from)
 {
-	char ipbuf[128]; /* FIXME: I don't like fixed size buffers */
+	char ipbuf[128];			/* FIXME: I don't like fixed size buffers */
 
-	inet_ntop(from->sa_family,
-		WDMSockaddrGetAddr(from, NULL), ipbuf, sizeof(ipbuf));
+	inet_ntop(from->sa_family, WDMSockaddrGetAddr(from, NULL), ipbuf, sizeof(ipbuf));
 
 	return wstrdup(ipbuf);
 }
-
