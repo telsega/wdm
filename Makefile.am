@@ -16,7 +16,7 @@ do_subst = $(SED) \
 
 SUFFIXES = .in
 
-.in:
+.in: Makefile
 	$(AM_V_GEN)$(do_subst) > $@ < $<
 
 bin_PROGRAMS = bin/wdm bin/wdmLogin
@@ -87,8 +87,7 @@ EXTRA_DIST = $(configs) \
 	     README.pam \
 	     README.pixmaps \
 	     README.voins \
-	     TODO \
-	     wdm.spec
+	     TODO
 
 AM_CFLAGS = -DLOCALEDIR=\"$(localedir)\"
 

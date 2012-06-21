@@ -42,4 +42,3 @@ configure
 depcomp
 install-sh
 missing
-wdm.spec
