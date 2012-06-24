@@ -24,6 +24,7 @@
 #include <wdmLogin.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 static Bool WDMCheckPLGeometry(WMPropList * pl, void *def, void *target);
 
@@ -48,7 +49,7 @@ static WDMDictionarySpec wdmLogin_config = { sizeof(WDMLoginConfig), wdmLogin_co
 static Bool WDMCheckPLInteger(WMPropList * pl, void *def, void *target)
 {
 	int *int_target = (int *)target;
-	int int_def = (int)def;
+	int int_def = (int)(intptr_t)def;
 	char *text = NULL;
 	char *endptr = NULL;
 
@@ -66,7 +67,7 @@ static Bool WDMCheckPLInteger(WMPropList * pl, void *def, void *target)
 static Bool WDMCheckPLUInteger(WMPropList * pl, void *def, void *target)
 {
 	unsigned int *int_target = (unsigned int *)target;
-	unsigned int int_def = (unsigned int)def;
+	unsigned int int_def = (unsigned int)(intptr_t)def;
 	char *text = NULL;
 	char *endptr = NULL;
 
@@ -91,10 +92,10 @@ static Bool WDMCheckPLGeometry(WMPropList * pl, void *def, void *target)
 		memcpy(rect_target, def, sizeof(WMRect));
 
 	if (pl != NULL && WMIsPLArray(pl)) {
-		WDMCheckPLUInteger(WMGetFromPLArray(pl, 0), (void *)rect_target->size.width, &rect_target->size.width);
-		WDMCheckPLUInteger(WMGetFromPLArray(pl, 1), (void *)rect_target->size.height, &rect_target->size.height);
-		WDMCheckPLInteger(WMGetFromPLArray(pl, 2), (void *)rect_target->pos.x, &rect_target->pos.x);
-		WDMCheckPLInteger(WMGetFromPLArray(pl, 3), (void *)rect_target->pos.y, &rect_target->pos.y);
+		WDMCheckPLUInteger(WMGetFromPLArray(pl, 0), (void *)(intptr_t)rect_target->size.width, &rect_target->size.width);
+		WDMCheckPLUInteger(WMGetFromPLArray(pl, 1), (void *)(intptr_t)rect_target->size.height, &rect_target->size.height);
+		WDMCheckPLInteger(WMGetFromPLArray(pl, 2), (void *)(intptr_t)rect_target->pos.x, &rect_target->pos.x);
+		WDMCheckPLInteger(WMGetFromPLArray(pl, 3), (void *)(intptr_t)rect_target->pos.y, &rect_target->pos.y);
 		return True;
 	}
 	return False;

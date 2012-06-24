@@ -7,6 +7,11 @@ AC_CONFIG_HEADERS([include/config.h])
 
 AC_PROG_INSTALL
 AC_PROG_CC
+AC_PROG_CC_C99
+
+AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"],
+	  [AC_MSG_FAILURE([Yuor compiler does not support C99 standard])])
+
 AM_PROG_CC_C_O
 AC_PROG_RANLIB
 AC_PROG_SED

@@ -71,6 +71,10 @@ static int runAndWait(char **args, char **environ);
 #include <pwd.h>
 #endif
 
+#ifdef WITH_CONSOLE_KIT
+#include <consolekit.h>
+#endif
+
 #include <pwd.h>
 #include <unistd.h>
 
@@ -105,9 +109,9 @@ void log_to_audit_system(int success)
 		return;
 	}
 	audit_fd = audit_open();
-	pam_get_item(pamh, PAM_RHOST, &hostname);
-	pam_get_item(pamh, PAM_TTY, &tty);
-	pam_get_item(pamh, PAM_USER, &login);
+	pam_get_item(pamh, PAM_RHOST, (const void **)&hostname);
+	pam_get_item(pamh, PAM_TTY, (const void **)&tty);
+	pam_get_item(pamh, PAM_USER, (const void **)&login);
 	if (login)
 		pw = getpwnam(login);
 	else {

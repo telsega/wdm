@@ -22,6 +22,7 @@
 #include <wdmlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdint.h>
 
 /*
  * Bool bool;
@@ -33,7 +34,7 @@ Bool WDMCheckPLBool(WMPropList * pl, void *def, void *target)
 	char *text = NULL;
 
 	WDMDebug("WDMCheckPLBool(%p, %p, %p)\n", (void *)pl, def, target);
-	*bool_target = (Bool) def;
+	*bool_target = (Bool)(intptr_t) def;
 	if (pl && WMIsPLString(pl)) {
 		text = WMGetFromPLString(pl);
 		if (!strcasecmp(text, "yes")) {
