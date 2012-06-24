@@ -45,15 +45,8 @@ from The Open Group.
 #include <X11/Xauth.h>
 #include <X11/Intrinsic.h>
 
-#if defined(X_POSIX_C_SOURCE)
-#define _POSIX_C_SOURCE X_POSIX_C_SOURCE
 #include <setjmp.h>
 #include <limits.h>
-#undef _POSIX_C_SOURCE
-#else
-#include <setjmp.h>
-#include <limits.h>
-#endif
 #include <time.h>
 #define Time_t time_t
 
@@ -69,49 +62,22 @@ from The Open Group.
 #undef dirty					/* Some bozo put a macro called dirty in sys/param.h */
 #endif							/* pegasus */
 
-#ifndef X_NOT_POSIX
-#ifdef _POSIX_SOURCE
 #include <sys/wait.h>
-#else
-#define _POSIX_SOURCE
-#ifdef SCO325
-#include <sys/procset.h>
-#include <sys/siginfo.h>
-#endif
-#include <sys/wait.h>
-#undef _POSIX_SOURCE
-#endif
 #define waitCode(w)	(WIFEXITED(w) ? WEXITSTATUS(w) : 0)
 #define waitSig(w)	(WIFSIGNALED(w) ? WTERMSIG(w) : 0)
 #define waitCore(w)    0		/* not in POSIX.  so what? */
 typedef int waitType;
-#else							/* X_NOT_POSIX */
-#ifdef SYSV
-#define waitCode(w)	(((w) >> 8) & 0x7f)
-#define waitSig(w)	((w) & 0xff)
-#define waitCore(w)	(((w) >> 15) & 0x01)
-typedef int waitType;
-#else							/* SYSV */
-#include <sys/wait.h>
-#define waitCode(w)	((w).w_T.w_Retcode)
-#define waitSig(w)	((w).w_T.w_Termsig)
-#define waitCore(w)	((w).w_T.w_Coredump)
-typedef union wait waitType;
-#endif
-#endif							/* X_NOT_POSIX */
 
 #ifdef USE_PAM
 #include <security/pam_appl.h>
 #endif
 
-#ifdef CSRG_BASED
 #include <sys/param.h>
 #ifdef HAS_SETUSERCONTEXT
 #include <login_cap.h>
 #include <pwd.h>
 #ifdef USE_BSDAUTH
 #include <bsd_auth.h>
-#endif
 #endif
 #endif
 
@@ -480,25 +446,11 @@ extern void registerHostname(char *name, int namelen);
 
 #include <stdlib.h>
 
-#if defined(X_NOT_POSIX) && defined(SIGNALRETURNSINT)
-#define SIGVAL int
-#else
 #define SIGVAL void
-#endif
 
-#if defined(X_NOT_POSIX) || defined(__EMX__) || defined(__NetBSD__) && defined(__sparc__)
-#if defined(SYSV) || defined(__EMX__)
-#define SIGNALS_RESET_WHEN_CAUGHT
-#define UNRELIABLE_SIGNALS
-#endif
-#define Setjmp(e)	setjmp(e)
-#define Longjmp(e,v)	longjmp(e,v)
-#define Jmp_buf		jmp_buf
-#else
 #define Setjmp(e)   sigsetjmp(e,1)
 #define Longjmp(e,v)	siglongjmp(e,v)
 #define Jmp_buf		sigjmp_buf
-#endif
 
 typedef SIGVAL(*SIGFUNC) (int);
 

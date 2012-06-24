@@ -45,9 +45,6 @@ from The Open Group.
 #include <ctype.h>
 #include <grp.h>				/* for initgroups */
 #include <sys/types.h>
-#ifdef AIXV3
-#include <usersec.h>
-#endif
 #ifdef SECURE_RPC
 #include <rpc/rpc.h>
 #include <rpc/key_prot.h>
@@ -74,16 +71,9 @@ static int runAndWait(char **args, char **environ);
 #include <pwd.h>
 #endif
 
-#if defined(CSRG_BASED)
 #include <pwd.h>
 #include <unistd.h>
-#else
-extern struct passwd *getpwnam(GETPWNAM_ARGS);
-#ifdef linux
-extern void endpwent(void);
-#endif
-extern char *crypt(CRYPT_ARGS);
-#endif
+
 #ifdef USE_PAM
 pam_handle_t **thepamhp()
 {
@@ -481,11 +471,9 @@ static Bool StartClient(struct verify_info *verify, struct display *d, int *pidp
 			WDMDebug("%s ", *f);
 		WDMDebug("\n");
 	}
-#ifdef USE_PAM
-#endif
+
 	/* Do system-dependent login setup here */
 
-#ifndef AIXV3
 	if (setgid(verify->gid) < 0) {
 		WDMError("setgid %d (user \"%s\") failed, errno=%d\n", verify->gid, name, errno);
 		return (0);
@@ -496,12 +484,10 @@ static Bool StartClient(struct verify_info *verify, struct display *d, int *pidp
 		return (0);
 	}
 #endif
-#ifndef QNX4
 	if (initgroups(name, verify->gid) < 0) {
 		WDMError("initgroups for \"%s\" failed, errno=%d\n", name, errno);
 		return (0);
 	}
-#endif							/* QNX4 doesn't support multi-groups, no initgroups() */
 #ifdef USE_PAM
 	if (pamh) {
 		if (pam_setcred(pamh, PAM_ESTABLISH_CRED) != PAM_SUCCESS) {
@@ -525,7 +511,6 @@ static Bool StartClient(struct verify_info *verify, struct display *d, int *pidp
 		}
 	}
 #endif
-#endif							/* AIXV3 */
 	switch (pid = fork()) {
 	case 0:
 		CleanUpChild();
@@ -534,21 +519,10 @@ static Bool StartClient(struct verify_info *verify, struct display *d, int *pidp
 		DestroyWellKnownSockets();
 #endif
 
-#ifndef AIXV3
 		if (setuid(verify->uid) < 0) {
 			WDMError("setuid %d (user \"%s\") failed, errno=%d\n", verify->uid, name, errno);
 			return (0);
 		}
-#else							/* AIXV3 */
-		/*
-		 * Set the user's credentials: uid, gid, groups,
-		 * audit classes, user limits, and umask.
-		 */
-		if (setpcred(name, NULL) == -1) {
-			WDMError("setpcred for \"%s\" failed, errno=%d\n", name, errno);
-			return (0);
-		}
-#endif							/* AIXV3 */
 
 		/*
 		 * for Security Enhanced Linux,

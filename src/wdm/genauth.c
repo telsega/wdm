@@ -182,9 +182,7 @@ void GenerateAuthData(char *auth, int len)
 	}
 #else
 	{
-#ifndef __EMX__
 		long time();
-#endif
 
 		ldata[0] = time((long *)0);
 		ldata[1] = getpid();

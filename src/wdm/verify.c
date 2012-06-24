@@ -51,10 +51,6 @@ from The Open Group.
 
 #include <wdmlib.h>
 
-#ifdef QNX4
-extern char *crypt(const char *, const char *);
-#endif
-
 static char *envvars[] = {
 	"TZ",						/* SYSV and SVR4, but never hurts */
 #if defined(sony) && !defined(SYSTYPE_SYSV) && !defined(_SYSTYPE_SYSV)
@@ -363,15 +359,8 @@ int Verify(struct display *d, struct greet_info *greet, struct verify_info *veri
 	} else {
 		user_pass = sp->sp_pwdp;
 	}
-#ifndef QNX4
-	endspent();
-#endif							/* QNX4 doesn't need endspent() to end shadow passwd ops */
 #endif
-#if defined(ultrix) || defined(__ultrix__)
-	if (authenticate_user(p, greet->password, NULL) < 0)
-#else
 	if (strcmp(crypt(greet->password, user_pass), user_pass))
-#endif
 	{
 		if (!greet->allow_null_passwd || strlen(p->pw_passwd) > 0) {
 			WDMDebug("password verify failed\n");

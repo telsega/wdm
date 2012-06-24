@@ -39,15 +39,7 @@ from The Open Group.
 
 #include <dm_socket.h>
 
-#ifdef UNIXCONN
-#ifndef X_NO_SYS_UN
-#ifndef Lynx
 #include <sys/un.h>				/* struct sockaddr_un */
-#else
-#include <un.h>					/* struct sockaddr_un */
-#endif
-#endif
-#endif
 
 #include <wdmlib.h>
 
@@ -81,16 +73,12 @@ char *NetaddrPort(XdmcpNetaddr netaddrp, int *lenp)
 char *NetaddrAddress(XdmcpNetaddr netaddrp, int *lenp)
 {
 	switch (NetaddrFamily(netaddrp)) {
-#ifdef UNIXCONN
 	case AF_UNIX:
 		*lenp = strlen(((struct sockaddr_un *)netaddrp)->sun_path);
 		return (char *)(((struct sockaddr_un *)netaddrp)->sun_path);
-#endif
-#ifdef TCPCONN
 	case AF_INET:
 		*lenp = sizeof(struct in_addr);
 		return (char *)&(((struct sockaddr_in *)netaddrp)->sin_addr);
-#endif
 	default:
 		*lenp = 0;
 		return NULL;
@@ -115,17 +103,13 @@ int ConvertAddr(XdmcpNetaddr saddr, int *len, char **addr)
 		break;
 #endif
 #ifdef AF_UNIX
-#ifndef hpux
 	case AF_UNIX:
 		retval = FamilyLocal;
 		break;
 #endif
-#endif
-#ifdef TCPCONN
 	case AF_INET:
 		retval = FamilyInternet;
 		break;
-#endif
 	default:
 		retval = -1;
 		break;

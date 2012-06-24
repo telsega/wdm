@@ -502,7 +502,7 @@ static void forward_respond(struct sockaddr *from, int fromlen, int length)
 					memmove(un_addr.sun_path, clientAddress.data, clientAddress.length);
 					un_addr.sun_path[clientAddress.length] = '\0';
 					client = (struct sockaddr *)&un_addr;
-#if defined(BSD44SOCKETS) && !defined(Lynx) && defined(UNIXCONN)
+#if defined(BSD44SOCKETS) && !defined(Lynx)
 					un_addr.sun_len = strlen(un_addr.sun_path);
 					clientlen = SUN_LEN(&un_addr);
 #else

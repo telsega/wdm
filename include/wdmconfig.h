@@ -7,9 +7,6 @@
 
 /* wdm stuff which should always be defined */
 
-#define UNIXCONN
-#define TCPCONN
-
 #ifdef HAVE_PAM
 #define USE_PAM
 #else

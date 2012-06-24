@@ -37,19 +37,7 @@ from The Open Group.
 #include	<dm_auth.h>
 
 #include	<stdio.h>
-#ifdef X_POSIX_C_SOURCE
-#define _POSIX_C_SOURCE X_POSIX_C_SOURCE
 #include <signal.h>
-#undef _POSIX_C_SOURCE
-#else
-#if defined(X_NOT_POSIX) || defined(_POSIX_SOURCE)
-#include <signal.h>
-#else
-#define _POSIX_SOURCE
-#include <signal.h>
-#undef _POSIX_SOURCE
-#endif
-#endif
 #ifdef __NetBSD__
 #include <sys/param.h>
 #endif
@@ -64,9 +52,7 @@ from The Open Group.
 #include	<stdarg.h>
 
 #ifndef F_TLOCK
-#ifndef X_NOT_POSIX
 #include	<unistd.h>
-#endif
 #endif
 
 #include <wdmlib.h>
@@ -363,7 +349,6 @@ static SIGVAL StopAll(int n)
 
 int ChildReady;
 
-#ifndef UNRELIABLE_SIGNALS
 static SIGVAL ChildNotify(int n)
 {
 	int olderrno = errno;
@@ -374,51 +359,24 @@ static SIGVAL ChildNotify(int n)
 #endif
 	errno = olderrno;
 }
-#endif
 
 void WaitForChild(void)
 {
 	int pid;
 	struct display *d;
 	waitType status;
-#if !defined(X_NOT_POSIX) && !defined(__EMX__)
 	sigset_t mask, omask;
-#else
-	int omask;
-#endif
 
-#ifdef UNRELIABLE_SIGNALS
-	/* XXX classic System V signal race condition here with RescanNotify */
-	if ((pid = wait(&status)) != -1)
-#else
-#ifndef X_NOT_POSIX
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGCHLD);
 	sigaddset(&mask, SIGHUP);
 	sigprocmask(SIG_BLOCK, &mask, &omask);
 	WDMDebug("signals blocked\n");
-#else
-	omask = sigblock(sigmask(SIGCHLD) | sigmask(SIGHUP));
-	WDMDebug("signals blocked, mask was 0x%x\n", omask);
-#endif
 	if (!ChildReady && !Rescan)
-#ifndef X_NOT_POSIX
 		sigsuspend(&omask);
-#else
-		sigpause(omask);
-#endif
 	ChildReady = 0;
-#ifndef X_NOT_POSIX
 	sigprocmask(SIG_SETMASK, &omask, (sigset_t *) NULL);
-#else
-	sigsetmask(omask);
-#endif
-#ifndef X_NOT_POSIX
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-#else
-	while ((pid = wait3(&status, WNOHANG, (struct rusage *)0)) > 0)
-#endif
-#endif
 	{
 		WDMDebug("Manager wait returns pid: %d sig %d core %d code %d\n", pid, waitSig(status), waitCore(status), waitCode(status));
 		if (autoRescan.i)

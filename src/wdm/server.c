@@ -176,29 +176,19 @@ static int serverPause(unsigned t, int serverPid)
 			WDMDebug("Already received USR1\n");
 #endif
 		for (;;) {
-#if defined(SYSV) && defined(X_NOT_POSIX)
-			pid = wait((waitType *) 0);
-#else
 			if (!receivedUsr1)
 				pid = wait((waitType *) 0);
 			else
-#ifndef X_NOT_POSIX
 				pid = waitpid(-1, (int *)0, WNOHANG);
-#else
-				pid = wait3((waitType *) 0, WNOHANG, (struct rusage *)0);
-#endif							/* X_NOT_POSIX */
-#endif							/* SYSV */
 			if (pid == serverPid || (pid == -1 && errno == ECHILD)) {
 				WDMDebug("Server dead\n");
 				serverPauseRet = 1;
 				break;
 			}
-#if !defined(SYSV) || !defined(X_NOT_POSIX)
 			if (pid == 0) {
 				WDMDebug("Server alive and kicking\n");
 				break;
 			}
-#endif
 		}
 	}
 	(void)alarm((unsigned)0);

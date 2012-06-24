@@ -103,12 +103,7 @@ void freeArgs(char **argv)
 
 void CleanUpChild(void)
 {
-#ifdef CSRG_BASED
 	setsid();
-#else
-	setpgid(0, getpid());
-	sigsetmask(0);
-#endif
 #ifdef SIGCHLD
 	(void)Signal(SIGCHLD, SIG_DFL);
 #endif
@@ -133,14 +128,10 @@ char *localHostname(void)
 }
 
 SIGVAL(*Signal(int sig, SIGFUNC handler))(int) {
-#if !defined(X_NOT_POSIX) && !defined(__EMX__)
 	struct sigaction sigact, osigact;
 	sigact.sa_handler = handler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
 	sigaction(sig, &sigact, &osigact);
 	return osigact.sa_handler;
-#else
-	return signal(sig, handler);
-#endif
 }

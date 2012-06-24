@@ -49,9 +49,7 @@ from The Open Group.
 
 #include <WINGs/WUtil.h>
 
-#if defined(TCPCONN)
 #include <dm_socket.h>
-#endif
 
 #if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || (defined(SYSV) && defined(i386))
 #define NEED_UTSNAME
@@ -66,42 +64,16 @@ from The Open Group.
 #endif							/* ISC */
 #endif							/* i386 */
 
-#ifdef SVR4
 #include <netdb.h>
-#ifndef SCO325
-#include <sys/sockio.h>
-#endif
-#include <sys/stropts.h>
-#endif
-#ifdef __convex__
-#include <sync/queue.h>
-#include <sync/sema.h>
-#endif
-#ifdef __GNU__
-#include <netdb.h>
-#undef SIOCGIFCONF
-#else							/* __GNU__ */
 #include <net/if.h>
-#endif							/* __GNU__ */
 
 #if ((defined(SVR4) && !defined(sun)) || defined(ISC)) && defined(SIOCGIFCONF)
 #define SYSV_SIOCGIFCONF
 #endif
 
-#ifdef CSRG_BASED
 #include <sys/param.h>
 #if (BSD >= 199103)
 #define VARIABLE_IFREQ
-#endif
-#endif
-
-#ifdef __EMX__
-#define link rename
-int chown(int a, int b, int c)
-{
-}
-
-#include <io.h>
 #endif
 
 struct AuthProtocol {
@@ -633,124 +605,6 @@ static void DefineLocal(FILE * file, Xauth * auth)
 #endif
 }
 
-#ifdef SYSV_SIOCGIFCONF
-
-/* Deal with different SIOCGIFCONF ioctl semantics on SYSV, SVR4 */
-
-static int ifioctl(int fd, int cmd, char *arg)
-{
-	struct strioctl ioc;
-	int ret;
-
-	bzero((char *)&ioc, sizeof(ioc));
-	ioc.ic_cmd = cmd;
-	ioc.ic_timout = 0;
-	if (cmd == SIOCGIFCONF) {
-		ioc.ic_len = ((struct ifconf *)arg)->ifc_len;
-		ioc.ic_dp = ((struct ifconf *)arg)->ifc_buf;
-#ifdef ISC
-		/* SIOCGIFCONF is somewhat brain damaged on ISC. The argument
-		 * buffer must contain the ifconf structure as header. Ifc_req
-		 * is also not a pointer but a one element array of ifreq
-		 * structures. On return this array is extended by enough
-		 * ifreq fields to hold all interfaces. The return buffer length
-		 * is placed in the buffer header.
-		 */
-		((struct ifconf *)ioc.ic_dp)->ifc_len = ioc.ic_len - sizeof(struct ifconf);
-#endif
-	} else {
-		ioc.ic_len = sizeof(struct ifreq);
-		ioc.ic_dp = arg;
-	}
-	ret = ioctl(fd, I_STR, (char *)&ioc);
-	if (ret >= 0 && cmd == SIOCGIFCONF)
-#ifdef SVR4
-		((struct ifconf *)arg)->ifc_len = ioc.ic_len;
-#endif
-#ifdef ISC
-	{
-		((struct ifconf *)arg)->ifc_len = ((struct ifconf *)ioc.ic_dp)->ifc_len;
-		((struct ifconf *)arg)->ifc_buf = (caddr_t) ((struct ifconf *)ioc.ic_dp)->ifc_req;
-	}
-#endif
-	return (ret);
-}
-#else							/* SYSV_SIOCGIFCONF */
-#define ifioctl ioctl
-#endif							/* SYSV_SIOCGIFCONF */
-
-#ifdef WINTCP					/* NCR with Wollongong TCP */
-
-#include <sys/un.h>
-#include <stropts.h>
-#include <tiuser.h>
-
-#include <sys/stream.h>
-#include <net/if.h>
-#include <netinet/ip.h>
-#include <netinet/ip_var.h>
-#include <netinet/in.h>
-#include <netinet/in_var.h>
-
-static void DefineSelf(int fd, FILE * file, Xauth * auth)
-{
-	/*
-	 * The Wollongong drivers used by NCR SVR4/MP-RAS don't understand the
-	 * socket IO calls that most other drivers seem to like. Because of
-	 * this, this routine must be special cased for NCR. Eventually,
-	 * this will be cleared up.
-	 */
-
-	struct ipb ifnet;
-	struct in_ifaddr ifaddr;
-	struct strioctl str;
-	unsigned char *addr;
-	int len, ipfd;
-
-	if ((ipfd = open("/dev/ip", O_RDWR, 0)) < 0)
-		LogError("Getting interface configuration");
-
-	/* Indicate that we want to start at the begining */
-	ifnet.ib_next = (struct ipb *)1;
-
-	while (ifnet.ib_next) {
-		str.ic_cmd = IPIOC_GETIPB;
-		str.ic_timout = 0;
-		str.ic_len = sizeof(struct ipb);
-		str.ic_dp = (char *)&ifnet;
-
-		if (ioctl(ipfd, (int)I_STR, (char *)&str) < 0) {
-			close(ipfd);
-			LogError("Getting interface configuration");
-		}
-
-		ifaddr.ia_next = (struct in_ifaddr *)ifnet.if_addrlist;
-		str.ic_cmd = IPIOC_GETINADDR;
-		str.ic_timout = 0;
-		str.ic_len = sizeof(struct in_ifaddr);
-		str.ic_dp = (char *)&ifaddr;
-
-		if (ioctl(ipfd, (int)I_STR, (char *)&str) < 0) {
-			close(ipfd);
-			LogError("Getting interface configuration");
-		}
-
-		/*
-		 * Ignore the 127.0.0.1 entry.
-		 */
-		if (IA_SIN(&ifaddr)->sin_addr.s_addr == htonl(0x7f000001))
-			continue;
-
-		writeAddr(FamilyInternet, 4, (char *)&(IA_SIN(&ifaddr)->sin_addr), file, auth);
-
-	}
-	close(ipfd);
-}
-
-#else							/* WINTCP */
-
-#ifdef SIOCGIFCONF
-
 /* Handle variable length ifreq in BNR2 and later */
 #ifdef VARIABLE_IFREQ
 #define ifr_size(p) (sizeof (struct ifreq) + \
@@ -774,7 +628,7 @@ static void DefineSelf(int fd, FILE * file, Xauth * auth)
 
 	ifc.ifc_len = sizeof(buf);
 	ifc.ifc_buf = buf;
-	if (ifioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0)
+	if (ioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0)
 		WDMError("Trouble getting network interface configuration");
 
 #ifdef ISC
@@ -810,50 +664,6 @@ static void DefineSelf(int fd, FILE * file, Xauth * auth)
 	}
 }
 
-#else							/* SIOCGIFCONF */
-
-/* Define this host for access control.  Find all the hosts the OS knows about 
- * for this fd and add them to the selfhosts list.
- */
-static void DefineSelf(int fd, int file, int auth)
-{
-	register int n;
-	int len;
-	caddr_t addr;
-	int family;
-
-	struct utsname name;
-	register struct hostent *hp;
-
-	union {
-		struct sockaddr sa;
-		struct sockaddr_in in;
-	} saddr;
-
-	struct sockaddr_in *inetaddr;
-
-	/* hpux:
-	 * Why not use gethostname()?  Well, at least on my system, I've had to
-	 * make an ugly kernel patch to get a name longer than 8 characters, and
-	 * uname() lets me access to the whole string (it smashes release, you
-	 * see), whereas gethostname() kindly truncates it for me.
-	 */
-	uname(&name);
-	hp = gethostbyname(name.nodename);
-	if (hp != NULL) {
-		saddr.sa.sa_family = hp->h_addrtype;
-		inetaddr = (struct sockaddr_in *)(&(saddr.sa));
-		memmove((char *)&(inetaddr->sin_addr), (char *)hp->h_addr, (int)hp->h_length);
-		family = ConvertAddr(&(saddr.sa), &len, &addr);
-		if (family >= 0) {
-			writeAddr(FamilyInternet, sizeof(inetaddr->sin_addr), (char *)(&inetaddr->sin_addr), file, auth);
-		}
-	}
-}
-
-#endif							/* SIOCGIFCONF else */
-#endif							/* WINTCP else */
-
 static void setAuthNumber(Xauth * auth, char *name)
 {
 	char *colon;
@@ -887,11 +697,9 @@ static void writeLocalAuth(FILE * file, Xauth * auth, char *name)
 
 	WDMDebug("writeLocalAuth: %s %.*s\n", name, auth->name_length, auth->name);
 	setAuthNumber(auth, name);
-#ifdef TCPCONN
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	DefineSelf(fd, file, auth);
 	close(fd);
-#endif
 	DefineLocal(file, auth);
 }
 
