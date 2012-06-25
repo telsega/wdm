@@ -51,12 +51,11 @@ from The Open Group.
 
 #include <dm_socket.h>
 
-#define NEED_UTSNAME
-#include <sys/utsname.h>
-
 #if defined(SYSV) && defined(i386)
 #include <sys/stream.h>
 #endif							/* i386 */
+
+#include <X11/Xlibint.h>
 
 #include <netdb.h>
 #include <net/if.h>
@@ -539,60 +538,10 @@ static void writeAddr(int family, int addr_length, char *addr, FILE * file, Xaut
 
 static void DefineLocal(FILE * file, Xauth * auth)
 {
-	char displayname[100];
-	char tmp_displayname[100];
+	char	displayname[HOST_NAME_MAX];
+	int	len = _XGetHostname (displayname, sizeof(displayname));
 
-	strcpy(tmp_displayname, "");
-
-	/* stolen from xinit.c */
-
-/* Make sure this produces the same string as _XGetHostname in lib/X/XlibInt.c.
- * Otherwise, Xau will not be able to find your cookies in the Xauthority file.
- *
- * Note: POSIX says that the ``nodename'' member of utsname does _not_ have
- *       to have sufficient information for interfacing to the network,
- *       and so, you may be better off using gethostname (if it exists).
- */
-
-#ifdef NEED_UTSNAME
-
-	/* hpux:
-	 * Why not use gethostname()?  Well, at least on my system, I've had to
-	 * make an ugly kernel patch to get a name longer than 8 characters, and
-	 * uname() lets me access to the whole string (it smashes release, you
-	 * see), whereas gethostname() kindly truncates it for me.
-	 */
-	{
-		struct utsname name;
-
-		uname(&name);
-		strcpy(displayname, name.nodename);
-	}
-	writeAddr(FamilyLocal, strlen(displayname), displayname, file, auth);
-
-	strcpy(tmp_displayname, displayname);
-#endif
-
-#if (!defined(NEED_UTSNAME) || defined (hpux))
-	/* AIXV3:
-	 * In AIXV3, _POSIX_SOURCE is defined, but uname gives only first
-	 * field of hostname. Thus, we use gethostname instead.
-	 */
-
-	/*
-	 * For HP-UX, HP's Xlib expects a fully-qualified domain name, which
-	 * is achieved by using gethostname().  For compatability, we must
-	 * also still create the entry using uname() above.
-	 */
-	gethostname(displayname, sizeof(displayname));
-
-	/*
-	 * If gethostname and uname both returned the same name,
-	 * do not write a duplicate entry.
-	 */
-	if (strcmp(displayname, tmp_displayname))
-		writeAddr(FamilyLocal, strlen(displayname), displayname, file, auth);
-#endif
+	writeAddr (FamilyLocal, len, displayname, file, auth);
 }
 
 /* Handle variable length ifreq in BNR2 and later */
