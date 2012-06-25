@@ -108,9 +108,6 @@ int WDMRedirectFileToLog(int level, pid_t pid, int fd)
 void WDMRedirectSignals(int n)
 {
 	kill(childpid, n);
-#ifdef SIGNALS_RESET_WHEN_CAUGHT
-	Signal(n, WDMRedirectSignals);
-#endif
 }
 
 void WDMRedirectStderr(int level)

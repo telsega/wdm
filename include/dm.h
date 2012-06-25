@@ -442,14 +442,10 @@ extern void registerHostname(char *name, int namelen);
 
 #include <stdlib.h>
 
-#define SIGVAL void
-
 #define Setjmp(e)   sigsetjmp(e,1)
 #define Longjmp(e,v)	siglongjmp(e,v)
 #define Jmp_buf		sigjmp_buf
 
-typedef SIGVAL(*SIGFUNC) (int);
-
-SIGVAL(*Signal(int, SIGFUNC Handler)) (int);
+void (*Signal(int, void (*Handler)(int)))(int);
 
 #endif							/* _DM_H_ */

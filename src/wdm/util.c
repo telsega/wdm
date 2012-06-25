@@ -127,7 +127,7 @@ char *localHostname(void)
 	return localHostbuf;
 }
 
-SIGVAL(*Signal(int sig, SIGFUNC handler))(int) {
+void (*Signal(int sig, void (*handler)(int)))(int) {
 	struct sigaction sigact, osigact;
 	sigact.sa_handler = handler;
 	sigemptyset(&sigact.sa_mask);

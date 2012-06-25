@@ -138,21 +138,21 @@ static struct verify_info verify;
 
 static Jmp_buf abortSession;
 
-static SIGVAL catchTerm(int n)
+static void catchTerm(int n)
 {
 	Longjmp(abortSession, 1);
 }
 
 static Jmp_buf pingTime;
 
-static SIGVAL catchAlrm(int n)
+static void catchAlrm(int n)
 {
 	Longjmp(pingTime, 1);
 }
 
 static Jmp_buf tenaciousClient;
 
-static SIGVAL waitAbort(int n)
+static void waitAbort(int n)
 {
 	Longjmp(tenaciousClient, 1);
 }
@@ -351,7 +351,7 @@ void DeleteXloginResources(struct display *d, Display * dpy)
 
 static Jmp_buf syncJump;
 
-static SIGVAL syncTimeout(int n)
+static void syncTimeout(int n)
 {
 	Longjmp(syncJump, 1);
 }

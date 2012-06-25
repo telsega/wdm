@@ -50,13 +50,10 @@ static int serverPause(unsigned t, int serverPid);
 
 static Display *dpy;
 
-static SIGVAL CatchUsr1(int n)
+static void CatchUsr1(int n)
 {
 	int olderrno = errno;
 
-#ifdef SIGNALS_RESET_WHEN_CAUGHT
-	(void)Signal(SIGUSR1, CatchUsr1);
-#endif
 	WDMDebug("display manager caught SIGUSR1\n");
 	++receivedUsr1;
 	errno = olderrno;
@@ -144,12 +141,12 @@ int StartServer(struct display *d)
 static Jmp_buf pauseAbort;
 static int serverPauseRet;
 
-static SIGVAL serverPauseAbort(int n)
+static void serverPauseAbort(int n)
 {
 	Longjmp(pauseAbort, 1);
 }
 
-static SIGVAL serverPauseUsr1(int n)
+static void serverPauseUsr1(int n)
 {
 	WDMDebug("display manager paused til SIGUSR1\n");
 	++receivedUsr1;
@@ -211,7 +208,7 @@ static int serverPause(unsigned t, int serverPid)
 
 static Jmp_buf openAbort;
 
-static SIGVAL abortOpen(int n)
+static void abortOpen(int n)
 {
 	Longjmp(openAbort, 1);
 }
@@ -306,7 +303,7 @@ static int PingLostIOErr(Display * dpy)
 	return 0;
 }
 
-static SIGVAL PingLostSig(int n)
+static void PingLostSig(int n)
 {
 	PingLost();
 }
@@ -314,7 +311,7 @@ static SIGVAL PingLostSig(int n)
 int PingServer(struct display *d, Display * alternateDpy)
 {
 	int (*oldError) (Display *);
-	SIGVAL(*oldSig) (int);
+	void(*oldSig)(int);
 	int oldAlarm;
 	static Display *aDpy;
 

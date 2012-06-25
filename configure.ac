@@ -22,13 +22,6 @@ AC_DEFINE([_XOPEN_SOURCE], [600], [Enable POSIX extensions if present])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h sys/param.h syslog.h])
-AC_CHECK_DECLS([sys_siglist], [], [],
-			   [#include <signal.h>
-				/* NetBSD declares sys_siglist in unistd.h. */
-				#ifdef HAVE_UNISTD_H
-				# include <unistd.h>
-				#endif
-				])
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T

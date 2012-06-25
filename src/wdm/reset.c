@@ -71,7 +71,7 @@ static void killWindows(Display * dpy, Window window)
 
 static Jmp_buf resetJmp;
 
-static SIGVAL abortReset(int n)
+static void abortReset(int n)
 {
 	Longjmp(resetJmp, 1);
 }

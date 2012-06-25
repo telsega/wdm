@@ -57,7 +57,7 @@ from The Open Group.
 
 #include <wdmlib.h>
 
-static SIGVAL StopAll(int n), RescanNotify(int n);
+static void StopAll(int n), RescanNotify(int n);
 static void RescanServers(void);
 static void RestartDisplay(struct display *d, int forceReserver);
 static void ScanServers(void);
@@ -74,9 +74,7 @@ static char *Title;
 static int TitleLen;
 #endif
 
-#ifndef UNRELIABLE_SIGNALS
-static SIGVAL ChildNotify(int n);
-#endif
+static void ChildNotify(int n);
 
 static int StorePid(void);
 
@@ -164,9 +162,7 @@ int main(int argc, char **argv)
 	ScanServers();
 	StartDisplays();
 	(void)Signal(SIGHUP, RescanNotify);
-#ifndef UNRELIABLE_SIGNALS
 	(void)Signal(SIGCHLD, ChildNotify);
-#endif
 	while (
 #ifdef XDMCP
 			  AnyWellKnownSockets() ||
@@ -176,25 +172,18 @@ int main(int argc, char **argv)
 			RescanServers();
 			Rescan = 0;
 		}
-#if defined(UNRELIABLE_SIGNALS) || !defined(XDMCP)
-		WaitForChild();
-#else
 		WaitForSomething();
-#endif
 	}
 	WDMDebug("Nothing left to do, exiting\n");
 	exit(0);
  /*NOTREACHED*/}
 
-static SIGVAL RescanNotify(int n)
+static void RescanNotify(int n)
 {
 	int olderrno = errno;
 
 	WDMDebug("Caught SIGHUP\n");
 	Rescan = 1;
-#ifdef SIGNALS_RESET_WHEN_CAUGHT
-	(void)Signal(SIGHUP, RescanNotify);
-#endif
 	errno = olderrno;
 }
 
@@ -307,7 +296,7 @@ static void RescanIfMod(void)
  * catch a SIGTERM, kill all displays and exit
  */
 
-static SIGVAL StopAll(int n)
+static void StopAll(int n)
 {
 	int olderrno = errno;
 
@@ -330,11 +319,6 @@ static SIGVAL StopAll(int n)
 	DestroyWellKnownSockets();
 #endif
 	ForEachDisplay(StopDisplay);
-#ifdef SIGNALS_RESET_WHEN_CAUGHT
-	/* to avoid another one from killing us unceremoniously */
-	(void)Signal(SIGTERM, StopAll);
-	(void)Signal(SIGINT, StopAll);
-#endif
 	errno = olderrno;
 }
 
@@ -345,7 +329,7 @@ static SIGVAL StopAll(int n)
 
 int ChildReady;
 
-static SIGVAL ChildNotify(int n)
+static void ChildNotify(int n)
 {
 	int olderrno = errno;
 
