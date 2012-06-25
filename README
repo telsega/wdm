@@ -1,47 +1,37 @@
 wdm -- WINGs Display Manager
 
-Wdm combines the functions of a graphical display manager identifying and
-authenticating a user on a system with some of the functions of a
+Wdm combines the functions of a graphical display manager identifying
+and authenticating a user on a system with some of the functions of a
 session manager in selecting and starting a window manager.  Optionally,
-wdm can shutdwn (rebott or halt) the system.
+wdm can shutdown (reboot or halt) the system.
 
-Wdm is a modification of XFree86's xdm package for graphically
-handling authentication and system login.  Most of xdm has been
-preserved (XFree86 4.2.1.1) with the Login interface based on a WINGs
-implementation using Tom Rothamel's "external greet" interface (see
-AUTHORS).
+!!!WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!WARNING!!!
+
+This project is experiencing major code cleanup.  Please, do not attempt
+to run this code in production environment.
+
+Ye be warned.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 See file COPYING for license and warranty information.
 
-See the ChangeLog, NEWS, and TODO files for additional information.
+See the NEWS, and TODO files for additional information.
 
-See the INSTALL file for information about configuration adn installation.
+***NOTE**********************************************************NOTE***
 
-***NOTE***********************************************************NOTE****
+The configs/ directory contains reference configuration and scripts.  It
+may work for you, but doesn't have to.  I DO NOT accept patches for
+these files.  Instead, package maintainers must provide set of scripts
+(or patched) suitable for specific OS/distribution.
 
-Please examine (and modify if necessary) the Xsession, Xclients, and
-wdm-config files in the wdm config directory (by default: /usr/local/etc/wdm).  Also,
-NOTE that the Xsession and Xclients (or ~./Xclients) files MUST be marked
-executable.  These files are the shell files which actually create
-the user's environment and start the window manager.  In addition, there
-can be a ~/.xsession or a ~/.Xclients file for each user
-in which case these files are executed (and MUST be marked executable).
-
-**************************************************************************
+************************************************************************
 
 Comments, bug reports, and corrections (patches) for other systems
 are appreciated.
 
-
 Homepage for wdm is at
-	http://voins.program.ru/wdm/
+	http://raorn.github.com/wdm/
 
-Old wdm mailing list is dead (AFAIK). You can subscribe to new
-wdm mailing list at
-	http://lrn.ru/mailman/listinfo/wdm/
-
-There's IRC channel #wdm at irc.ornet.ru.
-
---
-Alexey Voinov <voins@voins.program.ru>
-
+-- 
+Alexey I. Froloff <raorn@raorn.name>

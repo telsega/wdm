@@ -86,6 +86,7 @@ EXTRA_DIST = $(configs) \
 	     README.newGnuLinuxlogo \
 	     README.pam \
 	     README.pixmaps \
+	     README.pre-2.0 \
 	     README.voins \
 	     TODO
 
