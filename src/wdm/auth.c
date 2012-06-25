@@ -58,18 +58,10 @@ from The Open Group.
 
 #if defined(SYSV) && defined(i386)
 #include <sys/stream.h>
-#ifdef ISC
-#include <stropts.h>
-#include <sys/sioctl.h>
-#endif							/* ISC */
 #endif							/* i386 */
 
 #include <netdb.h>
 #include <net/if.h>
-
-#if ((defined(SVR4) && !defined(sun)) || defined(ISC)) && defined(SIOCGIFCONF)
-#define SYSV_SIOCGIFCONF
-#endif
 
 #include <sys/param.h>
 #if (BSD >= 199103)
@@ -631,11 +623,7 @@ static void DefineSelf(int fd, FILE * file, Xauth * auth)
 	if (ioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0)
 		WDMError("Trouble getting network interface configuration");
 
-#ifdef ISC
-#define IFC_IFC_REQ (struct ifreq *) ifc.ifc_buf
-#else
 #define IFC_IFC_REQ ifc.ifc_req
-#endif
 
 	cplim = (char *)IFC_IFC_REQ + ifc.ifc_len;
 

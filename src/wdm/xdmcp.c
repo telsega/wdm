@@ -305,12 +305,7 @@ void WaitForSomething(void)
 			if (xdmcpFd >= 0 && FD_ISSET(xdmcpFd, &reads))
 				ProcessRequestSocket();
 			if (chooserFd >= 0 && FD_ISSET(chooserFd, &reads))
-#ifdef ISC
-				if (!ChildReady) {
-					WaitForSomething();
-				} else
-#endif
-					ProcessChooserSocket(chooserFd);
+				ProcessChooserSocket(chooserFd);
 		}
 		if (ChildReady) {
 			WaitForChild();
