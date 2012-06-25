@@ -133,11 +133,7 @@ int_resource wdmSequentialXServerLaunch;	/* if true, launch multiple X servers *
 #define DEF_CHOOSER "/usr/lib/X11/wdm/chooser"
 #endif
 #ifndef DEF_AUTH_NAME
-#ifdef HASXDMAUTH
-#define DEF_AUTH_NAME	"XDM-AUTHORIZATION-1 MIT-MAGIC-COOKIE-1"
-#else
 #define DEF_AUTH_NAME	"MIT-MAGIC-COOKIE-1"
-#endif
 #endif
 #ifndef DEF_AUTH_DIR
 #define DEF_AUTH_DIR "/usr/lib/X11/wdm"

@@ -51,11 +51,6 @@ typedef struct _XdmAuth {
 } XdmAuthRec, *XdmAuthPtr;
 
 static XdmAuthRec auth[] = {
-#ifdef HASXDMAUTH
-	{{(CARD16) 20, (CARD8 *) "XDM-AUTHENTICATION-1"},
-	 {(CARD16) 19, (CARD8 *) "XDM-AUTHORIZATION-1"},
-	 },
-#endif
 	{{(CARD16) 0, (CARD8 *) 0},
 	 {(CARD16) 0, (CARD8 *) 0},
 	 }
@@ -76,10 +71,6 @@ ARRAY8Ptr ChooseAuthentication(ARRAYofARRAY8Ptr authenticationNames)
 
 int CheckAuthentication(struct protoDisplay *pdpy, ARRAY8Ptr displayID, ARRAY8Ptr name, ARRAY8Ptr data)
 {
-#ifdef HASXDMAUTH
-	if (name->length && !strncmp((char *)name->data, "XDM-AUTHENTICATION-1", 20))
-		return XdmCheckAuthentication(pdpy, displayID, name, data);
-#endif
 	return TRUE;
 }
 

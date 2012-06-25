@@ -45,13 +45,6 @@ from The Open Group.
 #include <ctype.h>
 #include <grp.h>				/* for initgroups */
 #include <sys/types.h>
-#ifdef SECURE_RPC
-#include <rpc/rpc.h>
-#include <rpc/key_prot.h>
-#endif
-#ifdef K5AUTH
-#include <krb5/krb5.h>
-#endif
 
 #include <wdmlib.h>
 
@@ -416,28 +409,6 @@ void SessionExit(struct display *d, int status, int removeAuth)
 		setgid(verify.gid);
 		setuid(verify.uid);
 		RemoveUserAuthorization(d, &verify);
-#ifdef K5AUTH
-		/* do like "kdestroy" program */
-		{
-			krb5_error_code code;
-			krb5_ccache ccache;
-
-			code = Krb5DisplayCCache(d->name, &ccache);
-			if (code)
-				WDMError("%s while getting Krb5 ccache to destroy\n", error_message(code));
-			else {
-				code = krb5_cc_destroy(ccache);
-				if (code) {
-					if (code == KRB5_FCC_NOFILE) {
-						WDMDebug("No Kerberos ccache file found to destroy\n");
-					} else
-						WDMError("%s while destroying Krb5 credentials cache\n", error_message(code));
-				} else
-					WDMDebug("Kerberos ccache destroyed\n");
-				krb5_cc_close(ccache);
-			}
-		}
-#endif							/* K5AUTH */
 	}
 	WDMDebug("Display %s exiting with status %d\n", d->name, status);
 	exit(status);
@@ -545,74 +516,6 @@ static Bool StartClient(struct verify_info *verify, struct display *d, int *pidp
 		 * for user-based authorization schemes,
 		 * use the password to get the user's credentials.
 		 */
-#ifdef SECURE_RPC
-		/* do like "keylogin" program */
-		{
-			char netname[MAXNETNAMELEN + 1], secretkey[HEXKEYBYTES + 1];
-			int nameret, keyret;
-			int len;
-			int key_set_ok = 0;
-
-			nameret = getnetname(netname);
-			WDMDebug("User netname: %s\n", netname);
-			len = strlen(passwd);
-			if (len > 8)
-				bzero(passwd + 8, len - 8);
-			keyret = getsecretkey(netname, secretkey, passwd);
-			WDMDebug("getsecretkey returns %d, key length %d\n", keyret, strlen(secretkey));
-			/* is there a key, and do we have the right password? */
-			if (keyret == 1) {
-				if (*secretkey) {
-					keyret = key_setsecret(secretkey);
-					WDMDebug("key_setsecret returns %d\n", keyret);
-					if (keyret == -1)
-						WDMError("failed to set NIS secret key\n");
-					else
-						key_set_ok = 1;
-				} else {
-					/* found a key, but couldn't interpret it */
-					WDMError("password incorrect for NIS principal \"%s\"\n", nameret ? netname : name);
-				}
-			}
-			if (!key_set_ok) {
-				/* remove SUN-DES-1 from authorizations list */
-				int i, j;
-				for (i = 0; i < d->authNum; i++) {
-					if (d->authorizations[i]->name_length == 9 && memcmp(d->authorizations[i]->name, "SUN-DES-1", 9) == 0) {
-						for (j = i + 1; j < d->authNum; j++)
-							d->authorizations[j - 1] = d->authorizations[j];
-						d->authNum--;
-						break;
-					}
-				}
-			}
-			bzero(secretkey, strlen(secretkey));
-		}
-#endif
-#ifdef K5AUTH
-		/* do like "kinit" program */
-		{
-			int i, j;
-			int result;
-			extern char *Krb5CCacheName();
-
-			result = Krb5Init(name, passwd, d);
-			if (result == 0) {
-				/* point session clients at the Kerberos credentials cache */
-				verify->userEnviron = WDMSetEnv(verify->userEnviron, "KRB5CCNAME", Krb5CCacheName(d->name));
-			} else {
-				for (i = 0; i < d->authNum; i++) {
-					if (d->authorizations[i]->name_length == 14 && memcmp(d->authorizations[i]->name, "MIT-KERBEROS-5", 14) == 0) {
-						/* remove Kerberos from authorizations list */
-						for (j = i + 1; j < d->authNum; j++)
-							d->authorizations[j - 1] = d->authorizations[j];
-						d->authNum--;
-						break;
-					}
-				}
-			}
-		}
-#endif							/* K5AUTH */
 		bzero(passwd, strlen(passwd));
 #ifdef WITH_CONSOLE_KIT
 		if (ck_session_cookie != NULL) {

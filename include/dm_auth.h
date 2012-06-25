@@ -38,26 +38,6 @@ authorization.
 extern void MitInitAuth(unsigned short name_len, char *name);
 extern Xauth *MitGetAuth(unsigned short namelen, char *name);
 
-#ifdef HASXDMAUTH
-extern void XdmInitAuth(unsigned short name_len, char *name);
-extern Xauth *XdmGetAuth(unsigned short namelen, char *name);
-#ifdef XDMCP
-extern void XdmGetXdmcpAuth(struct protoDisplay *pdpy, unsigned short authorizationNameLen, char *authorizationName);
-#else
-#define XdmGetXdmcpAuth NULL
-#endif
-#endif
-
-#ifdef SECURE_RPC
-extern void SecureRPCInitAuth(unsigned short name_len, char *name);
-extern Xauth *SecureRPCGetAuth(unsigned short namelen, char *name);
-#endif
-
-#ifdef K5AUTH
-extern void Krb5InitAuth(unsigned short name_len, char *name);
-extern Xauth *Krb5GetAuth(unsigned short namelen, char *name);
-#endif
-
 /* auth.c */
 extern int ValidAuthorization(unsigned short name_length, char *name);
 

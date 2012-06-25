@@ -15,8 +15,4 @@
 #endif
 #endif
 
-/* per kde/kdm, too many systems have trouble with secure rpc */
-/* disable secure rpc 'for now' */
-#undef SECURE_RPC
-
 #endif							/* __WDMCONFIG_H */
