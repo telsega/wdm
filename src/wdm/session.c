@@ -157,10 +157,6 @@ static SIGVAL waitAbort(int n)
 	Longjmp(tenaciousClient, 1);
 }
 
-#if defined(_POSIX_SOURCE) || defined(SYSV) || defined(SVR4)
-#define killpg(pgrp, sig) kill(-(pgrp), sig)
-#endif
-
 static void AbortClient(int pid)
 {
 	int sig = SIGTERM;

@@ -51,10 +51,8 @@ from The Open Group.
 
 #include <dm_socket.h>
 
-#if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || (defined(SYSV) && defined(i386))
 #define NEED_UTSNAME
 #include <sys/utsname.h>
-#endif
 
 #if defined(SYSV) && defined(i386)
 #include <sys/stream.h>

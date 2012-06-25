@@ -19,8 +19,4 @@
 /* disable secure rpc 'for now' */
 #undef SECURE_RPC
 
-#ifdef sun
-#define SVR4 1
-#endif
-
 #endif							/* __WDMCONFIG_H */

@@ -51,13 +51,6 @@ from The Open Group.
 #include	<un.h>
 #endif
 #endif
-#if defined(__SVR4) && defined(__sun)
-	/*
-	 * make sure we get the resolver's version of gethostbyname
-	 * otherwise we may not get all the addresses!
-	 */
-#define gethostbyname res_gethostbyname
-#endif
 #include	<netdb.h>
 
 #include <time.h>

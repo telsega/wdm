@@ -237,11 +237,7 @@ struct greet_info {
 };
 
 /* setgroups is not covered by POSIX, arg type varies */
-#if defined(SYSV) || defined(SVR4) || defined(__osf__) || defined(linux) || defined(__GNU__)
 #define GID_T gid_t
-#else
-#define GID_T int
-#endif
 
 typedef void (*ChooserFunc) (CARD16 connectionType, ARRAY8Ptr addr, char *closure);
 

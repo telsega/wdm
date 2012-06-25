@@ -57,10 +57,6 @@ from The Open Group.
 
 #include <wdmlib.h>
 
-#if defined(SVR4) && !defined(SCO)
-extern FILE *fdopen();
-#endif
-
 static SIGVAL StopAll(int n), RescanNotify(int n);
 static void RescanServers(void);
 static void RestartDisplay(struct display *d, int forceReserver);

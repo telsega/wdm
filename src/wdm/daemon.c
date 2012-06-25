@@ -32,11 +32,7 @@ from The Open Group.
 
 #include <X11/Xos.h>
 
-#if defined(SVR4) || defined(USG)
-#include <termios.h>
-#else
 #include <sys/ioctl.h>
-#endif
 #if defined(__osf__) || defined(linux) || defined(__GNU__) || defined(__CYGWIN__) \
 	|| (defined(IRIX) && !defined(_IRIX4))
 #define setpgrp setpgid

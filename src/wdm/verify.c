@@ -53,20 +53,6 @@ from The Open Group.
 
 static char *envvars[] = {
 	"TZ",						/* SYSV and SVR4, but never hurts */
-#if defined(sony) && !defined(SYSTYPE_SYSV) && !defined(_SYSTYPE_SYSV)
-	"bootdev",
-	"boothowto",
-	"cputype",
-	"ioptype",
-	"machine",
-	"model",
-	"CONSDEVTYPE",
-	"SYS_LANGUAGE",
-	"SYS_CODE",
-#endif
-#if (defined(SVR4) || defined(SYSV)) && defined(i386) && !defined(sun)
-	"XLOCAL",
-#endif
 	NULL
 };
 
@@ -107,11 +93,7 @@ static char *PAM_password;
 static int pam_error;
 
 static int PAM_conv(int num_msg,
-#ifdef sun
-					struct pam_message **msg,
-#else
 					const struct pam_message **msg,
-#endif
 					struct pam_response **resp, void *appdata_ptr)
 {
 	int count = 0, replies = 0;
