@@ -91,6 +91,7 @@ EXTRA_DIST = $(configs) \
 	     TODO
 
 AM_CFLAGS = -DLOCALEDIR=\"$(localedir)\"
+AM_LDFLAGS = -Wl,--as-needed
 
 noinst_HEADERS = include/consolekit.h \
 		 include/dm_auth.h \

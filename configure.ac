@@ -31,6 +31,7 @@ AC_CHECK_FUNC([mkstemp],
 			  [AC_DEFINE([HAVE_MKSTEMP], [1],
 						 [Define if you have mkstemp function to use it instead of mktemp.])])
 
+AC_SEARCH_LIBS([getifaddrs], [socket nsl])
 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.18.1)

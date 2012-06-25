@@ -61,9 +61,6 @@ from The Open Group.
 #include <net/if.h>
 
 #include <sys/param.h>
-#if (BSD >= 199103)
-#define VARIABLE_IFREQ
-#endif
 
 struct AuthProtocol {
 	unsigned short name_length;
@@ -437,7 +434,7 @@ static void freeAddr(struct addrList *a)
 
 static void initAddrs(void)
 {
-	addrs = WMCreateArrayWithDestructor(0, (void (*) (void*)) freeAddr);
+	addrs = WMCreateArrayWithDestructor(0, (void (*)(void *))freeAddr);
 }
 
 static void doneAddrs(void)
@@ -538,46 +535,103 @@ static void writeAddr(int family, int addr_length, char *addr, FILE * file, Xaut
 
 static void DefineLocal(FILE * file, Xauth * auth)
 {
-	char	displayname[HOST_NAME_MAX];
-	int	len = _XGetHostname (displayname, sizeof(displayname));
+	char displayname[HOST_NAME_MAX];
+	int len = _XGetHostname(displayname, sizeof(displayname));
 
-	writeAddr (FamilyLocal, len, displayname, file, auth);
+	writeAddr(FamilyLocal, len, displayname, file, auth);
 }
 
+/* Define this host for access control.  Find all the hosts the OS knows about
+ * for this fd and add them to the selfhosts list.
+ */
+#ifdef HAVE_GETIFADDRS
+#include <ifaddrs.h>
+
+static void DefineSelf(int fd, FILE * file, Xauth * auth)
+{
+	struct ifaddrs *ifap, *ifr;
+	char *addr;
+	int family, len;
+
+	WDMDebug("DefineSelf\n");
+	if (getifaddrs(&ifap) < 0)
+		return;
+	for (ifr = ifap; ifr != NULL; ifr = ifr->ifa_next) {
+		len = sizeof(*(ifr->ifa_addr));
+		family = ConvertAddr((XdmcpNetaddr) (ifr->ifa_addr), &len, &addr);
+		if (family == -1 || family == FamilyLocal)
+			continue;
+		/*
+		 * don't write out 'localhost' entries, as
+		 * they may conflict with other local entries.
+		 * DefineLocal will always be called to add
+		 * the local entry anyway, so this one can
+		 * be tossed.
+		 */
+		if (family == FamilyInternet && len == 4 && addr[0] == 127) {
+			WDMDebug("Skipping localhost address\n");
+			continue;
+		}
+#if defined(IPv6) && defined(AF_INET6)
+		if (family == FamilyInternet6) {
+			if (IN6_IS_ADDR_LOOPBACK(((struct in6_addr *)addr))) {
+				WDMDebug("Skipping IPv6 localhost address\n");
+				continue;
+			}
+			/* Also skip XDM-AUTHORIZATION-1 */
+			if (auth->name_length == 19 && strcmp(auth->name, "XDM-AUTHORIZATION-1") == 0) {
+				WDMDebug("Skipping IPv6 XDM-AUTHORIZATION-1\n");
+				continue;
+			}
+		}
+#endif
+		writeAddr(family, len, addr, file, auth);
+	}
+	freeifaddrs(ifap);
+	WDMDebug("DefineSelf done\n");
+}
+#else							/* GETIFADDRS */
+
+#define ifioctl ioctl
+
+#if defined(SIOCGIFCONF)
+
 /* Handle variable length ifreq in BNR2 and later */
-#ifdef VARIABLE_IFREQ
-#define ifr_size(p) (sizeof (struct ifreq) + \
-		     (p->ifr_addr.sa_len > sizeof (p->ifr_addr) ? \
-		      p->ifr_addr.sa_len - sizeof (p->ifr_addr) : 0))
+#ifdef _SIZEOF_ADDR_IFREQ
+#define ifr_size(p) _SIZEOF_ADDR_IFREQ(p)
 #else
 #define ifr_size(p) (sizeof (struct ifreq))
 #endif
 
-/* Define this host for access control.  Find all the hosts the OS knows about 
+/* Define this host for access control.  Find all the hosts the OS knows about
  * for this fd and add them to the selfhosts list.
  */
 static void DefineSelf(int fd, FILE * file, Xauth * auth)
 {
 	char buf[2048], *cp, *cplim;
-	struct ifconf ifc;
 	int len;
 	char *addr;
 	int family;
-	register struct ifreq *ifr;
+	struct ifreq *ifr;
+	struct ifconf ifc;
 
 	ifc.ifc_len = sizeof(buf);
 	ifc.ifc_buf = buf;
-	if (ioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0)
+
+	if (ifioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0) {
 		WDMError("Trouble getting network interface configuration");
 
-#define IFC_IFC_REQ ifc.ifc_req
+		return;
+	}
 
-	cplim = (char *)IFC_IFC_REQ + ifc.ifc_len;
+	cplim = (char *)ifc.ifc_req + ifc.ifc_len;
 
-	for (cp = (char *)IFC_IFC_REQ; cp < cplim; cp += ifr_size(ifr)) {
-		ifr = (struct ifreq *)cp;
-		if (ConvertAddr((XdmcpNetaddr) & ifr->ifr_addr, &len, &addr) < 0)
+	for (cp = (char *)ifc.ifc_req; cp < cplim; cp += ifr_size(ifr)) {
+		ifr = (struct ifreq *) cp;
+		family = ConvertAddr((XdmcpNetaddr) &ifr->ifr_addr, &len, &addr);
+		if (family < 0)
 			continue;
+
 		if (len == 0) {
 			WDMDebug("Skipping zero length address\n");
 			continue;
@@ -589,15 +643,70 @@ static void DefineSelf(int fd, FILE * file, Xauth * auth)
 		 * the local entry anyway, so this one can
 		 * be tossed.
 		 */
-		if (len == 4 && addr[0] == 127 && addr[1] == 0 && addr[2] == 0 && addr[3] == 1) {
+		if (family == FamilyInternet && len == 4 && addr[0] == 127 && addr[1] == 0 && addr[2] == 0 && addr[3] == 1) {
 			WDMDebug("Skipping localhost address\n");
 			continue;
 		}
-		family = FamilyInternet;
+#if defined(AF_INET6)
+		if (family == FamilyInternet6) {
+			if (IN6_IS_ADDR_LOOPBACK(((struct in6_addr *)addr))) {
+				WDMDebug("Skipping IPv6 localhost address\n");
+				continue;
+			}
+			/* Also skip XDM-AUTHORIZATION-1 */
+			if (auth->name_length == 19 && strcmp(auth->name, "XDM-AUTHORIZATION-1") == 0) {
+				WDMDebug("Skipping IPv6 XDM-AUTHORIZATION-1\n");
+				continue;
+			}
+		}
+#endif
 		WDMDebug("DefineSelf: write network address, length %d\n", len);
 		writeAddr(family, len, addr, file, auth);
 	}
 }
+#else							/* SIOCGIFCONF */
+
+/* Define this host for access control.  Find all the hosts the OS knows about
+ * for this fd and add them to the selfhosts list.
+ */
+static void DefineSelf(int fd, int file, int auth)
+{
+	int n;
+	int len;
+	caddr_t addr;
+	int family;
+
+	struct utsname name;
+	struct hostent *hp;
+
+	union {
+		struct sockaddr sa;
+		struct sockaddr_in in;
+	} saddr;
+
+	struct sockaddr_in *inetaddr;
+
+	/* hpux:
+	 * Why not use gethostname()?  Well, at least on my system, I've had to
+	 * make an ugly kernel patch to get a name longer than 8 characters, and
+	 * uname() lets me access to the whole string (it smashes release, you
+	 * see), whereas gethostname() kindly truncates it for me.
+	 */
+	uname(&name);
+	hp = gethostbyname(name.nodename);
+	if (hp != NULL) {
+		saddr.sa.sa_family = hp->h_addrtype;
+		inetaddr = (struct sockaddr_in *)(&(saddr.sa));
+		memmove((char *)&(inetaddr->sin_addr), (char *)hp->h_addr, (int)hp->h_length);
+		family = ConvertAddr(&(saddr.sa), &len, &addr);
+		if (family >= 0) {
+			writeAddr(FamilyInternet, sizeof(inetaddr->sin_addr), (char *)(&inetaddr->sin_addr), file, auth);
+		}
+	}
+}
+
+#endif							/* SIOCGIFCONF else */
+#endif							/* HAVE_GETIFADDRS */
 
 static void setAuthNumber(Xauth * auth, char *name)
 {
