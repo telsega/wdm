@@ -7,10 +7,6 @@ AC_CONFIG_HEADERS([include/config.h])
 
 AC_PROG_INSTALL
 AC_PROG_CC
-AC_PROG_CC_C99
-
-AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"],
-	  [AC_MSG_FAILURE([Yuor compiler does not support C99 standard])])
 
 AM_PROG_CC_C_O
 AC_PROG_RANLIB
@@ -18,7 +14,11 @@ AC_PROG_SED
 PKG_PROG_PKG_CONFIG
 
 AC_DEFINE([_GNU_SOURCE], [1], [Enable GNU extensions if present])
-AC_DEFINE([_XOPEN_SOURCE], [600], [Enable POSIX extensions if present])
+AC_DEFINE([_XOPEN_SOURCE], [600], [Enable POSIX.1-2001 extensions if present])
+
+AC_PROG_CC_C99
+AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"],
+	  [AC_MSG_FAILURE([Yuor compiler does not support C99 standard])])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h sys/param.h syslog.h])
