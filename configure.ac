@@ -141,7 +141,9 @@ AC_SUBST([XLIB_CFLAGS])
 AC_SUBST([XLIB_LIBS])
 
 
-PKG_CHECK_MODULES([WINGS], [WINGs], [], [AC_MSG_ERROR([Modern WINGs is required])])
+WINGS_CFLAGS=pkg-config WINGs --cflags 
+AC_SUBST([WINGS_CFLAGS])
+WINGS_LIBS=pkg-config WINGs --libs
 AC_SUBST([WINGS_LIBS])
 
 
