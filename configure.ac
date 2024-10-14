@@ -141,9 +141,9 @@ AC_SUBST([XLIB_CFLAGS])
 AC_SUBST([XLIB_LIBS])
 
 
-WINGS_CFLAGS=pkg-config WINGs --cflags 
+WINGS_CFLAGS=`pkg-config WINGs --cflags` 
 AC_SUBST([WINGS_CFLAGS])
-WINGS_LIBS=pkg-config WINGs --libs
+WINGS_LIBS=`pkg-config WINGs --libs`
 AC_SUBST([WINGS_LIBS])
 
 
